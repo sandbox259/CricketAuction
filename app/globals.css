@@ -1,0 +1,164 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+/* Cricket Auction Color Theme - Based on your requirements */
+@layer base {
+  :root {
+    /* Your specified color palette */
+    --primary: #2563eb; /* Blue-600 */
+    --accent: #f59e0b; /* Amber-500 */
+    --background: #f9fafb; /* Gray-50 */
+    --card: #ffffff; /* White */
+    --text-primary: #111827; /* Gray-900 */
+    --text-secondary: #6b7280; /* Gray-500 */
+    --border: #e5e7eb; /* Gray-200 */
+    --success: #10b981; /* Emerald-500 */
+    --error: #ef4444; /* Red-500 */
+    --neutral-highlight: #d1d5db; /* Gray-300 */
+    --muted-bg: #f3f4f6; /* Gray-100 for striped rows */
+    --radius: 0.75rem; /* 12px */
+    --font-inter: "Inter", system-ui, -apple-system, sans-serif;
+    --sidebar: oklch(1 0 0);
+    --sidebar-foreground: oklch(0.145 0 0);
+    --sidebar-primary: oklch(0.205 0 0);
+    --sidebar-primary-foreground: oklch(0.985 0 0);
+    --sidebar-accent: oklch(0.97 0 0);
+    --sidebar-accent-foreground: oklch(0.205 0 0);
+    --sidebar-border: oklch(0.922 0 0);
+    --sidebar-ring: oklch(0.708 0 0);
+    --chart-1: oklch(0.646 0.222 41.116);
+    --chart-2: oklch(0.6 0.118 184.704);
+    --chart-3: oklch(0.398 0.07 227.392);
+    --chart-4: oklch(0.828 0.189 84.429);
+    --chart-5: oklch(0.769 0.188 70.08);
+  }
+
+  @theme inline {
+    --font-sans: var(--font-inter);
+    --color-background: var(--background);
+    --color-foreground: var(--text-primary);
+    --color-card: var(--card);
+    --color-card-foreground: var(--text-primary);
+    --color-primary: var(--primary);
+    --color-primary-foreground: #ffffff;
+    --color-secondary: var(--muted-bg);
+    --color-secondary-foreground: var(--text-primary);
+    --color-muted: var(--muted-bg);
+    --color-muted-foreground: var(--text-secondary);
+    --color-accent: var(--accent);
+    --color-accent-foreground: #ffffff;
+    --color-destructive: var(--error);
+    --color-destructive-foreground: #ffffff;
+    --color-border: var(--border);
+    --color-input: var(--border);
+    --color-ring: var(--primary);
+    --radius-sm: 0.5rem;
+    --radius-md: 0.75rem; /* 12px */
+    --radius-lg: 1rem;
+    --radius-xl: 1.25rem;
+    --color-sidebar: var(--sidebar);
+    --color-sidebar-foreground: var(--sidebar-foreground);
+    --color-sidebar-primary: var(--sidebar-primary);
+    --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+    --color-sidebar-accent: var(--sidebar-accent);
+    --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+    --color-sidebar-border: var(--sidebar-border);
+    --color-sidebar-ring: var(--sidebar-ring);
+    --color-chart-1: var(--chart-1);
+    --color-chart-2: var(--chart-2);
+    --color-chart-3: var(--chart-3);
+    --color-chart-4: var(--chart-4);
+    --color-chart-5: var(--chart-5);
+  }
+
+  * {
+    border-color: var(--border);
+    transition: all 0.2s ease-in-out;
+  }
+
+  body {
+    background-color: var(--background);
+    color: var(--text-primary);
+    font-family: var(--font-inter);
+  }
+}
+
+/* Custom animations for your requirements */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.fade-in {
+  animation: fadeIn 0.3s ease-out;
+}
+
+.slide-in {
+  animation: slideIn 0.3s ease-out;
+}
+
+/* Button hover effects with scale-up */
+.btn-scale:hover {
+  transform: scale(1.02);
+}
+
+.btn-scale:active {
+  transform: scale(0.98);
+}
+
+/* Status pill styles */
+.status-sold {
+  background-color: var(--success);
+  color: white;
+}
+
+.status-unsold {
+  background-color: var(--error);
+  color: white;
+}
+
+.status-available {
+  background-color: var(--neutral-highlight);
+  color: var(--text-primary);
+}
+
+/* Custom scrollbar with your colors */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--muted-bg);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--text-secondary);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-primary);
+}
+
+/* Focus styles using your primary color */
+button:focus,
+input:focus,
+select:focus,
+textarea:focus {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
