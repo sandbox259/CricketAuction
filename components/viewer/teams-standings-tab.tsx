@@ -19,7 +19,7 @@ export default function TeamsStandingsTab({ teams }: TeamsStandingsTabProps) {
   const [selectedTeam, setSelectedTeam] = useState<string>("all")
   const [expandedTeams, setExpandedTeams] = useState<Set<number>>(new Set())
 
-  const totalBudget = 90000000 // 9 Crores
+  const totalBudget = 900000 // 9 Lakhs
 
   const filteredTeams = teamSummaries.filter((team) => {
     const matchesSearch = team.team_name.toLowerCase().includes(searchTerm.toLowerCase())
@@ -144,7 +144,7 @@ export default function TeamsStandingsTab({ teams }: TeamsStandingsTabProps) {
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-400">Budget Used</span>
-                  <span className="text-gray-900">₹{(team.total_spent || 0)} / ₹9Cr</span>
+                  <span className="text-gray-900">₹{(team.total_spent || 0)} / ₹9L</span>
                 </div>
                 <Progress value={((team.total_spent || 0) / totalBudget) * 100} className="h-2" />
               </div>
