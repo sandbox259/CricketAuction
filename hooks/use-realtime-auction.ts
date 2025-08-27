@@ -14,120 +14,93 @@ interface AuctionData {
 export function useRealtimeAuction(initialData: AuctionData) {
   const [data, setData] = useState<AuctionData>(initialData)
   const [isConnected, setIsConnected] = useState(false)
-  const [lastUpdate, setLastUpdate] = useState<Date>(new Date())
+  const [lastUpdate, setLastUpdate] = useState<string | null>(null)
 
   useEffect(() => {
     let channels: RealtimeChannel[] = []
 
+    const updateTimestamp = () => {
+      setLastUpdate(
+        new Date().toLocaleTimeString("en-US", {
+          hour12: true,
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+        })
+      )
+    }
+
     const setupRealtimeSubscriptions = async () => {
       try {
-        // Subscribe to players table changes
+        // Players
         const playersChannel = supabase
           .channel("players-changes")
           .on(
             "postgres_changes",
-            {
-              event: "*",
-              schema: "public",
-              table: "players",
-            },
-            async (payload) => {
-              console.log("Players change:", payload)
-
-              // Refetch players data
+            { event: "*", schema: "public", table: "players" },
+            async () => {
               const { data: players } = await supabase.from("players").select("*").order("name")
-
               if (players) {
                 setData((prev) => ({ ...prev, players }))
-                setLastUpdate(new Date())
+                updateTimestamp()
               }
-            },
+            }
           )
-          .subscribe((status) => {
-            console.log("Players subscription status:", status)
-            setIsConnected(status === "SUBSCRIBED")
-          })
+          .subscribe()
 
-        // Subscribe to assignments table changes
+        // Assignments
         const assignmentsChannel = supabase
           .channel("assignments-changes")
           .on(
             "postgres_changes",
-            {
-              event: "*",
-              schema: "public",
-              table: "assignments",
-            },
-            async (payload) => {
-              console.log("Assignments change:", payload)
-
-              // Refetch assignments with related data
+            { event: "*", schema: "public", table: "assignments" },
+            async () => {
               const { data: assignments } = await supabase
                 .from("assignments")
-                .select(`
-                  *,
-                  player:players(*),
-                  team:teams(*)
-                `)
+                .select(`*, player:players(*), team:teams(*)`)
                 .order("assigned_at", { ascending: false })
 
               if (assignments) {
                 setData((prev) => ({ ...prev, assignments }))
-                setLastUpdate(new Date())
+                updateTimestamp()
               }
-            },
+            }
           )
           .subscribe()
 
-        // Subscribe to teams table changes
+        // Teams
         const teamsChannel = supabase
           .channel("teams-changes")
           .on(
             "postgres_changes",
-            {
-              event: "*",
-              schema: "public",
-              table: "teams",
-            },
-            async (payload) => {
-              console.log("Teams change:", payload)
-
-              // Refetch teams data
+            { event: "*", schema: "public", table: "teams" },
+            async () => {
               const { data: teams } = await supabase.from("teams").select("*").order("name")
-
               if (teams) {
                 setData((prev) => ({ ...prev, teams }))
-                setLastUpdate(new Date())
+                updateTimestamp()
               }
-            },
+            }
           )
           .subscribe()
 
-        // Subscribe to auction overview updates
+        // Auction Overview
         const overviewChannel = supabase
           .channel("auction-overview")
           .on(
             "postgres_changes",
-            {
-              event: "*",
-              schema: "public",
-              table: "assignments",
-            },
+            { event: "*", schema: "public", table: "assignments" },
             async () => {
-              // Refetch auction overview when assignments change
               const { data: auctionOverview } = await supabase.rpc("get_auction_overview")
-
               if (auctionOverview) {
                 setData((prev) => ({ ...prev, auctionOverview }))
-                setLastUpdate(new Date())
+                updateTimestamp()
               }
-            },
+            }
           )
           .subscribe()
 
         channels = [playersChannel, assignmentsChannel, teamsChannel, overviewChannel]
-
-        // Set connection status
         setIsConnected(true)
       } catch (error) {
         console.error("Error setting up realtime subscriptions:", error)
@@ -137,11 +110,8 @@ export function useRealtimeAuction(initialData: AuctionData) {
 
     setupRealtimeSubscriptions()
 
-    // Cleanup function
     return () => {
-      channels.forEach((channel) => {
-        supabase.removeChannel(channel)
-      })
+      channels.forEach((channel) => supabase.removeChannel(channel))
       setIsConnected(false)
     }
   }, [])

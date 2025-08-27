@@ -147,7 +147,7 @@ export default function UsersTab({ initialUsers, teams }: UsersTabProps) {
                   <TableCell className="text-gray-600">
                     {user.team_id ? getTeamName(user.team_id) : "No Team"}
                   </TableCell>
-                  <TableCell className="text-gray-600">{new Date(user.created_at).toLocaleDateString()}</TableCell>
+                  <TableCell className="text-gray-600">{new Date(user.created_at).toLocaleDateString("en-GB")}</TableCell>
                   <TableCell>
                     <Dialog>
                       <DialogTrigger asChild>

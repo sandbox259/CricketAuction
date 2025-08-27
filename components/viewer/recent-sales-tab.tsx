@@ -168,7 +168,7 @@ export default function RecentSalesTab({ assignments }: RecentSalesTabProps) {
                   </div>
                   <div className="text-right">
                     <p className="text-gray-900 font-bold">₹{assignment.final_price}</p>
-                    <p className="text-gray-400 text-xs">{new Date(assignment.assigned_at).toLocaleDateString()}</p>
+                    <p className="text-gray-400 text-xs">{new Date(assignment.assigned_at).toLocaleDateString("en-GB")}</p>
                   </div>
                 </div>
 

@@ -26,6 +26,9 @@ interface AdminDashboardProps {
   }
 }
 
+
+
+
 export default function AdminDashboard({ user, initialData }: AdminDashboardProps) {
   const [activeTab, setActiveTab] = useState("overview")
 
@@ -48,7 +51,7 @@ export default function AdminDashboard({ user, initialData }: AdminDashboardProp
               </div>
             </div>
             <form action={signOut}>
-              <Button variant="ghost" size="sm" className="text-gray-700 hover:bg-gray-100 btn-scale">
+              <Button variant="ghost" size="sm" className="text-gray-700 hover:bg-blue-700 btn-scale">
                 <LogOut className="h-4 w-4 mr-2" />
                 Sign Out
               </Button>
@@ -162,7 +165,7 @@ export default function AdminDashboard({ user, initialData }: AdminDashboardProp
                         <p className="text-gray-900 font-semibold">
                           ₹{assignment.final_price}
                         </p>
-                        <p className="text-xs text-gray-500">{new Date(assignment.assigned_at).toLocaleDateString()}</p>
+                        <p className="text-xs text-gray-500">{new Date(assignment.assigned_at).toLocaleDateString("en-GB")}</p>
                       </div>
                     </div>
                   ))}

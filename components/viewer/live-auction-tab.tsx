@@ -27,6 +27,16 @@ export default function LiveAuctionTab({ currentPlayer, initialData }: LiveAucti
     return () => clearInterval(interval)
   }, [])
 
+  const formatDate = (dateString: string) => {
+  return new Date(dateString).toLocaleTimeString("en-US", {
+    hour: "numeric",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: true,
+  }).toUpperCase()
+}
+
+
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60)
     const secs = seconds % 60
@@ -188,7 +198,8 @@ export default function LiveAuctionTab({ currentPlayer, initialData }: LiveAucti
                 </div>
                 <div className="text-right">
                   <p className="text-gray-900 font-medium text-sm">₹{assignment.final_price}</p>
-                  <p className="text-gray-600 text-xs">{new Date(assignment.assigned_at).toLocaleTimeString()}</p>
+                  <p className="text-gray-600 text-xs">{formatTime(assignment.assigned_at)}
+</p>
                 </div>
               </div>
             ))}
