@@ -3,8 +3,8 @@
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { LogOut, Trophy, Users, DollarSign } from "lucide-react"
+import { Tabs, TabsContent } from "@/components/ui/tabs"
+import { LogOut, Trophy, Users, DollarSign, PlayCircle, Users2, ShoppingBag } from "lucide-react"
 import { signOut } from "@/lib/actions"
 import { useRealtimeAuction } from "@/hooks/use-realtime-auction"
 import { ConnectionStatus } from "@/components/ui/connection-status"
@@ -14,7 +14,7 @@ import TeamsStandingsTab from "./teams-standings-tab"
 import RecentSalesTab from "./recent-sales-tab"
 
 interface ViewerDashboardProps {
-  user?: any // Made user optional since viewers don't need authentication
+  user?: any
   initialData: {
     teams: any[]
     players: any[]
@@ -23,6 +23,13 @@ interface ViewerDashboardProps {
   }
 }
 
+const formatCurrency = (value: number) =>
+  new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: "INR",
+    maximumFractionDigits: 0,
+  }).format(value)
+
 export default function ViewerDashboard({ user, initialData }: ViewerDashboardProps) {
   const [activeTab, setActiveTab] = useState("live")
 
@@ -30,16 +37,25 @@ export default function ViewerDashboard({ user, initialData }: ViewerDashboardPr
   const { auctionOverview } = data
 
   const availablePlayers = data.players.filter((p) => p.status === "available")
-  const currentPlayer = availablePlayers[0] // For demo, show first available player
+  const currentPlayer = availablePlayers[0]
+
+  const tabs = [
+    { key: "live", label: "Live", Icon: PlayCircle },
+    { key: "players", label: "Players", Icon: Users2 },
+    { key: "teams", label: "Teams", Icon: Trophy },
+    { key: "sales", label: "Sales", Icon: ShoppingBag },
+  ]
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Mobile Header */}
-      <header className="sticky top-0 z-50 border-b bg-white border-gray-200">
+    <div className="min-h-screen bg-gray-50 flex flex-col">
+      {/* Header */}
+      <header className="sticky top-0 z-50 border-b bg-gradient-to-r from-amber-100 via-white to-amber-50 shadow-sm">
         <div className="px-4 py-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
-              <Trophy className="h-6 w-6 text-amber-500" />
+              <div className="p-2 rounded-full bg-amber-100">
+                <Trophy className="h-5 w-5 text-amber-600" />
+              </div>
               <div>
                 <h1 className="text-lg font-bold text-gray-900">Cricket Auction</h1>
                 <ConnectionStatus isConnected={isConnected} lastUpdate={lastUpdate} />
@@ -47,7 +63,11 @@ export default function ViewerDashboard({ user, initialData }: ViewerDashboardPr
             </div>
             {user && (
               <form action={signOut}>
-                <Button variant="ghost" size="sm" className="p-2 text-gray-900 hover:bg-gray-100">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="p-2 text-gray-600 hover:bg-gray-100 rounded-full"
+                >
                   <LogOut className="h-4 w-4" />
                 </Button>
               </form>
@@ -58,11 +78,13 @@ export default function ViewerDashboard({ user, initialData }: ViewerDashboardPr
 
       {/* Live Status Banner */}
       {currentPlayer && (
-        <div className="border-b bg-amber-50 border-amber-200 px-4 py-3">
+        <div className="border-b bg-white shadow-sm px-4 py-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
-              <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
-              <span className="text-sm font-medium text-gray-900">LIVE</span>
+              <span className="px-2 py-0.5 text-xs font-semibold bg-red-500 text-white rounded-full animate-pulse">
+                LIVE
+              </span>
+              <span className="text-sm font-medium text-gray-900">Player on Auction</span>
             </div>
             <div className="text-right">
               <p className="font-medium text-sm text-gray-900">{currentPlayer.name}</p>
@@ -75,28 +97,28 @@ export default function ViewerDashboard({ user, initialData }: ViewerDashboardPr
       {/* Quick Stats */}
       <div className="px-4 py-4">
         <div className="grid grid-cols-2 gap-3">
-          <Card className="bg-white border-gray-200 shadow-sm">
-            <CardContent className="p-3">
-              <div className="flex items-center space-x-2">
-                <Users className="h-4 w-4 text-blue-600" />
-                <div>
-                  <p className="text-xs text-gray-600">Players Sold</p>
-                  <p className="text-lg font-bold text-gray-900">{auctionOverview.sold_players || 0}</p>
-                </div>
+          <Card className="bg-gradient-to-br from-blue-50 to-white border border-blue-100 shadow-sm">
+            <CardContent className="p-3 flex items-center space-x-3">
+              <div className="p-2 rounded-full bg-blue-100">
+                <Users className="h-5 w-5 text-blue-600" />
+              </div>
+              <div>
+                <p className="text-xs text-gray-600">Players Sold</p>
+                <p className="text-lg font-bold text-gray-900">{auctionOverview.sold_players || 0}</p>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="bg-white border-gray-200 shadow-sm">
-            <CardContent className="p-3">
-              <div className="flex items-center space-x-2">
-                <DollarSign className="h-4 w-4 text-emerald-500" />
-                <div>
-                  <p className="text-xs text-gray-600">Total Spent</p>
-                  <p className="text-lg font-bold text-gray-900">
-                    ₹{(auctionOverview.total_spent || 0)}
-                  </p>
-                </div>
+          <Card className="bg-gradient-to-br from-emerald-50 to-white border border-emerald-100 shadow-sm">
+            <CardContent className="p-3 flex items-center space-x-3">
+              <div className="p-2 rounded-full bg-emerald-100">
+                <DollarSign className="h-5 w-5 text-emerald-600" />
+              </div>
+              <div>
+                <p className="text-xs text-gray-600">Total Spent</p>
+                <p className="text-lg font-bold text-gray-900">
+                  {formatCurrency(auctionOverview.total_spent || 0)}
+                </p>
               </div>
             </CardContent>
           </Card>
@@ -104,35 +126,8 @@ export default function ViewerDashboard({ user, initialData }: ViewerDashboardPr
       </div>
 
       {/* Main Content */}
-      <div className="px-4 pb-20">
+      <div className="flex-1 px-4 pb-20">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-          <TabsList className="grid w-full grid-cols-4 gap-x-2 h-12 bg-white border border-gray-200 rounded-lg overflow-hidden">
-            <TabsTrigger
-              value="live"
-              className="text-xs text-gray-700 hover:bg-gray-100 hover:text-gray-900 data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:hover:bg-blue-700 flex items-center justify-center transition-all duration-200"
-            >
-              Live
-            </TabsTrigger>
-            <TabsTrigger
-              value="players"
-              className="text-xs text-gray-700 hover:bg-gray-100 hover:text-gray-900 data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:hover:bg-blue-700 flex items-center justify-center transition-all duration-200"
-            >
-              Players
-            </TabsTrigger>
-            <TabsTrigger
-              value="teams"
-              className="text-xs text-gray-700 hover:bg-gray-100 hover:text-gray-900 data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:hover:bg-blue-700 flex items-center justify-center transition-all duration-200"
-            >
-              Teams
-            </TabsTrigger>
-            <TabsTrigger
-              value="sales"
-              className="text-xs text-gray-700 hover:bg-gray-100 hover:text-gray-900 data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:hover:bg-blue-700 flex items-center justify-center transition-all duration-200"
-            >
-              Sales
-            </TabsTrigger>
-          </TabsList>
-
           <TabsContent value="live" className="space-y-4">
             <LiveAuctionTab currentPlayer={currentPlayer} initialData={data} />
           </TabsContent>
@@ -151,8 +146,28 @@ export default function ViewerDashboard({ user, initialData }: ViewerDashboardPr
         </Tabs>
       </div>
 
-      {/* Bottom Navigation Space */}
-      <div className="h-16"></div>
+      {/* Floating Bottom Navigation */}
+      <nav className="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-50">
+        <div className="flex items-center justify-between w-full max-w-md mx-auto bg-white/90 backdrop-blur-md rounded-2xl shadow-lg border border-gray-200 px-6 py-2 space-x-6">
+          {tabs.map(({ key, label, Icon }) => (
+            <button
+              key={key}
+              aria-label={`${label} tab`}
+              onClick={() => setActiveTab(key)}
+              className={`flex flex-col items-center text-xs px-3 py-2 rounded-xl transition-colors duration-300 focus:outline-none focus:ring-0 ${
+                activeTab === key ? "bg-blue-50 text-blue-600" : "text-gray-500"
+              }`}
+            >
+              <Icon
+                className={`h-5 w-5 mb-1 transition-colors duration-300 ${
+                  activeTab === key ? "text-blue-600" : "text-gray-400"
+                }`}
+              />
+              {label}
+            </button>
+          ))}
+        </div>
+      </nav>
     </div>
   )
 }

@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
-import { Gavel, Clock, TrendingUp, Users, Trophy } from "lucide-react"
+import { Gavel, Clock, TrendingUp, Users, Trophy, History } from "lucide-react"
 
 interface LiveAuctionTabProps {
   currentPlayer: any
@@ -27,21 +27,18 @@ export default function LiveAuctionTab({ currentPlayer, initialData }: LiveAucti
     return () => clearInterval(interval)
   }, [])
 
-  const formatDate = (dateString: string) => {
-  return new Date(dateString).toLocaleTimeString("en-US", {
-    hour: "numeric",
-    minute: "2-digit",
-    second: "2-digit",
-    hour12: true,
-  }).toUpperCase()
-}
-
-
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60)
     const secs = seconds % 60
     return `${mins}:${secs.toString().padStart(2, "0")}`
   }
+
+  const formatCurrency = (value: number) =>
+  new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: "INR",
+    maximumFractionDigits: 0,
+  }).format(value)
 
   const availablePlayers = initialData.players.filter((p) => p.status === "available")
   const auctionProgress =
@@ -49,22 +46,24 @@ export default function LiveAuctionTab({ currentPlayer, initialData }: LiveAucti
       initialData.auctionOverview.total_players) *
     100
 
+
+
   return (
-    <div className="space-y-4">
-      {/* Current Player Card */}
+    <div className="space-y-5">
+      {/* 🔴 Current Player */}
       {currentPlayer ? (
-        <Card className="bg-white border-gray-200 rounded-xl shadow-lg hover:shadow-2xl transform hover:-translate-y-1 transition-all duration-300">
-          <CardHeader className="pb-3">
+        <Card className="bg-gradient-to-r from-white via-gray-50 to-white border border-gray-200 rounded-xl shadow-md hover:shadow-lg transition-all duration-300">
+          <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-2">
                 <Gavel className="h-5 w-5 text-blue-600" />
                 <span className="text-gray-900 font-medium">Current Player</span>
               </div>
-              <Badge className="bg-red-600 text-white animate-pulse">LIVE</Badge>
+              <Badge className="bg-red-500 text-white animate-pulse shadow-sm">LIVE</Badge>
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="flex flex-col md:flex-row items-center md:items-start space-y-4 md:space-y-0 md:space-x-6">
+            <div className="flex flex-col md:flex-row items-center md:items-start gap-6">
               <div className="flex-shrink-0">
                 <img
                   src={
@@ -72,14 +71,14 @@ export default function LiveAuctionTab({ currentPlayer, initialData }: LiveAucti
                     `/placeholder.svg?height=120&width=160&query=cricket player ${currentPlayer.name || "/placeholder.svg"}`
                   }
                   alt={currentPlayer.name}
-                  className="w-20 h-20 md:w-40 md:h-32 rounded-full md:rounded-lg object-cover border-2 border-blue-600"
+                  className="w-24 h-24 md:w-40 md:h-32 rounded-full md:rounded-xl object-cover border-2 border-blue-600 shadow-sm"
                 />
               </div>
               <div className="flex-1 text-center md:text-left">
-                <h2 className="text-2xl font-bold text-gray-900 mb-1">{currentPlayer.name}</h2>
-                <p className="text-amber-500 text-lg font-medium mb-2">{currentPlayer.position}</p>
+                <h2 className="text-2xl font-bold text-gray-900">{currentPlayer.name}</h2>
+                <p className="text-amber-500 text-lg font-medium">{currentPlayer.position}</p>
                 {currentPlayer.achievement && (
-                  <Badge className="bg-amber-100 text-amber-800 border border-amber-300">
+                  <Badge className="mt-2 bg-amber-100 text-amber-800 border border-amber-300 shadow-sm">
                     <Trophy className="h-3 w-3 mr-1" />
                     {currentPlayer.achievement}
                   </Badge>
@@ -88,34 +87,34 @@ export default function LiveAuctionTab({ currentPlayer, initialData }: LiveAucti
             </div>
 
             <div className="grid grid-cols-2 gap-4">
-              <div className="text-center p-3 bg-gray-50 rounded-lg">
+              <div className="text-center p-3 bg-gray-50 rounded-lg shadow-sm">
                 <p className="text-xs text-gray-600 mb-1">Base Price</p>
-                <p className="text-gray-900 font-bold">₹{currentPlayer.base_price}</p>
+                <p className="text-gray-900 font-bold">{formatCurrency(currentPlayer.base_price)}</p>
               </div>
-              <div className="text-center p-3 bg-gray-50 rounded-lg">
+              <div className="text-center p-3 bg-gray-50 rounded-lg shadow-sm">
                 <p className="text-xs text-gray-600 mb-1">Time Elapsed</p>
                 <p className="text-gray-900 font-bold">{formatTime(timeElapsed)}</p>
               </div>
             </div>
 
             <div className="text-center">
-              <p className="text-gray-600 text-sm">Bidding in progress...</p>
+              <p className="text-gray-500 text-sm italic">Bidding in progress...</p>
             </div>
           </CardContent>
         </Card>
       ) : (
-        <Card className="bg-white border-gray-200 shadow-sm">
-          <CardContent className="p-6 text-center">
-            <Clock className="h-12 w-12 text-gray-400 mx-auto mb-3" />
-            <h3 className="text-gray-900 font-medium mb-2">No Active Auction</h3>
-            <p className="text-gray-600 text-sm">Waiting for next player...</p>
+        <Card className="bg-white border-gray-200 shadow-sm rounded-xl">
+          <CardContent className="p-6 text-center space-y-2">
+            <Clock className="h-12 w-12 text-gray-400 mx-auto mb-2" />
+            <h3 className="text-gray-900 font-semibold">No Active Auction</h3>
+            <p className="text-gray-500 text-sm">Waiting for the next player...</p>
           </CardContent>
         </Card>
       )}
 
-      {/* Auction Progress */}
-      <Card className="bg-white border-gray-200 shadow-sm">
-        <CardHeader className="pb-3">
+      {/* 📊 Auction Progress */}
+      <Card className="bg-white border-gray-200 rounded-xl shadow-sm">
+        <CardHeader className="pb-2">
           <CardTitle className="text-gray-900 text-lg flex items-center">
             <TrendingUp className="h-5 w-5 mr-2 text-amber-500" />
             Auction Progress
@@ -125,24 +124,29 @@ export default function LiveAuctionTab({ currentPlayer, initialData }: LiveAucti
           <div className="space-y-2">
             <div className="flex justify-between text-sm">
               <span className="text-gray-600">Players Completed</span>
-              <span className="text-gray-900 font-medium">
-                {(initialData.auctionOverview.sold_players || 0) + (initialData.auctionOverview.unsold_players || 0)} /{" "}
-                {initialData.auctionOverview.total_players || 0}
+              <span className="text-gray-900 font-semibold">
+                {(initialData.auctionOverview.sold_players || 0) +
+                  (initialData.auctionOverview.unsold_players || 0)}{" "}
+                / {initialData.auctionOverview.total_players || 0}
               </span>
             </div>
-            <Progress value={auctionProgress} className="h-2" />
+            <Progress value={auctionProgress} className="h-2 rounded-full" />
           </div>
 
           <div className="grid grid-cols-3 gap-3 text-center">
-            <div className="p-2 bg-emerald-50 rounded-lg border border-emerald-200">
-              <p className="text-emerald-600 font-bold text-lg">{initialData.auctionOverview.sold_players || 0}</p>
+            <div className="p-2 bg-emerald-50 rounded-lg border border-emerald-200 shadow-sm">
+              <p className="text-emerald-600 font-bold text-lg">
+                {initialData.auctionOverview.sold_players || 0}
+              </p>
               <p className="text-xs text-gray-600">Sold</p>
             </div>
-            <div className="p-2 bg-red-50 rounded-lg border border-red-200">
-              <p className="text-red-600 font-bold text-lg">{initialData.auctionOverview.unsold_players || 0}</p>
+            <div className="p-2 bg-red-50 rounded-lg border border-red-200 shadow-sm">
+              <p className="text-red-600 font-bold text-lg">
+                {initialData.auctionOverview.unsold_players || 0}
+              </p>
               <p className="text-xs text-gray-600">Unsold</p>
             </div>
-            <div className="p-2 bg-blue-50 rounded-lg border border-blue-200">
+            <div className="p-2 bg-blue-50 rounded-lg border border-blue-200 shadow-sm">
               <p className="text-blue-600 font-bold text-lg">{availablePlayers.length}</p>
               <p className="text-xs text-gray-600">Remaining</p>
             </div>
@@ -150,9 +154,9 @@ export default function LiveAuctionTab({ currentPlayer, initialData }: LiveAucti
         </CardContent>
       </Card>
 
-      {/* Next Players */}
-      <Card className="bg-white border-gray-200 shadow-sm">
-        <CardHeader className="pb-3">
+      {/* ⏭ Coming Up Next */}
+      <Card className="bg-white border-gray-200 rounded-xl shadow-sm">
+        <CardHeader className="pb-2">
           <CardTitle className="text-gray-900 text-lg flex items-center">
             <Users className="h-5 w-5 mr-2 text-amber-500" />
             Coming Up Next
@@ -161,9 +165,12 @@ export default function LiveAuctionTab({ currentPlayer, initialData }: LiveAucti
         <CardContent>
           <div className="space-y-3">
             {availablePlayers.slice(1, 4).map((player, index) => (
-              <div key={player.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+              <div
+                key={player.id}
+                className="flex items-center justify-between p-3 bg-gray-50 rounded-lg shadow-sm hover:bg-gray-100 transition"
+              >
                 <div className="flex items-center space-x-3">
-                  <div className="w-6 h-6 bg-amber-500 rounded-full flex items-center justify-center">
+                  <div className="w-6 h-6 bg-amber-500 rounded-full flex items-center justify-center shadow-sm">
                     <span className="text-white text-xs font-bold">{index + 2}</span>
                   </div>
                   <div>
@@ -171,24 +178,28 @@ export default function LiveAuctionTab({ currentPlayer, initialData }: LiveAucti
                     <p className="text-gray-600 text-xs">{player.position}</p>
                   </div>
                 </div>
-                <div className="text-right">
-                  <p className="text-gray-900 text-sm font-medium">₹{player.base_price}</p>
-                </div>
+                <p className="text-gray-900 font-semibold text-sm">{formatCurrency(player.base_price)}</p>
               </div>
             ))}
           </div>
         </CardContent>
       </Card>
 
-      {/* Recent Activity */}
-      <Card className="bg-white border-gray-200 shadow-sm">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-gray-900 text-lg">Recent Sales</CardTitle>
+      {/* 🕑 Recent Activity */}
+      <Card className="bg-white border-gray-200 rounded-xl shadow-sm">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-gray-900 text-lg flex items-center">
+            <History className="h-5 w-5 mr-2 text-blue-500" />
+            Recent Sales
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
             {initialData.assignments.slice(0, 3).map((assignment: any) => (
-              <div key={assignment.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg fade-in">
+              <div
+                key={assignment.id}
+                className="flex items-center justify-between p-3 bg-gray-50 rounded-lg shadow-sm hover:bg-gray-100 transition"
+              >
                 <div className="flex items-center space-x-3">
                   <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
                   <div>
@@ -197,9 +208,8 @@ export default function LiveAuctionTab({ currentPlayer, initialData }: LiveAucti
                   </div>
                 </div>
                 <div className="text-right">
-                  <p className="text-gray-900 font-medium text-sm">₹{assignment.final_price}</p>
-                  <p className="text-gray-600 text-xs">{formatTime(assignment.assigned_at)}
-</p>
+                  <p className="text-gray-900 font-semibold text-sm">{formatCurrency(assignment.final_price)}</p>
+                  <p className="text-gray-500 text-xs">{assignment.assigned_at? new Date(assignment.assigned_at).toLocaleTimeString("en-US", {hour: "numeric",minute: "2-digit",hour12: true,}).replace("AM", "am").replace("PM", "pm"): "-"}</p>
                 </div>
               </div>
             ))}
