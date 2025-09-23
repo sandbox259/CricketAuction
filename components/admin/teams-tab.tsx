@@ -39,7 +39,7 @@ export default function TeamsTab({ initialTeams }: TeamsTabProps) {
     fetchTeamSummaries()
   }, [teams])
 
-  const totalBudget = 900000 // 9 Lakhs
+  const totalBudget = 120000 // 9 Lakhs
 
   return (
     <div className="space-y-6">
@@ -94,7 +94,7 @@ export default function TeamsTab({ initialTeams }: TeamsTabProps) {
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-600">Budget Used</span>
                   <span className="text-gray-900 font-medium">
-                    {formatCurrency(summary.total_spent || 0)} / ₹9L
+                    {formatCurrency(summary.total_spent || 0)} / ₹1.2L
                   </span>
                 </div>
                 <Progress value={((summary.total_spent || 0) / totalBudget) * 100} className="h-2" />

@@ -165,7 +165,7 @@ export default function AuctionTab({ initialData }: AuctionTabProps) {
 
       console.log("Team data received:", teamData)
 
-      const { budget_remaining, players_count } = teamData
+      const { budget_remaining, players_count, is_pune} = teamData
       
       // Calculate purchased players count (excluding captain/vice-captain)
       const purchasedPlayersCount = assignments.filter(a => a.team_id === Number.parseInt(selectedTeam)).length
@@ -181,6 +181,27 @@ export default function AuctionTab({ initialData }: AuctionTabProps) {
         minRequired: minRemainingBudget,
         wouldRemainAfterPurchase: budget_remaining - finalPriceNumber
       })
+
+      // New Constraint: Only one player from Pune allowed
+        if (selectedPlayer.city === "Pune") {
+        if (is_pune) {
+          toast.error("Team already has a player from Pune");
+          return;
+        } else {
+          // Mark team as having a Pune player
+          const { error: updateError } = await supabase
+            .from("teams")
+            .update({ is_pune: true })
+            .eq("id", Number.parseInt(selectedTeam));
+
+          if (updateError) {
+            console.error("Failed to update is_pune:", updateError);
+            toast.error("Failed to update Pune restriction");
+            return;
+          }
+        }
+      }
+
 
       // Constraint 1: finalPrice >= base_price
       if (finalPriceNumber < selectedPlayer.base_price) {
