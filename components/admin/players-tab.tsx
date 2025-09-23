@@ -24,6 +24,13 @@ interface PlayersTabProps {
   initialPlayers: any[]
 }
 
+const formatCurrency = (value: number) =>
+  new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: "INR",
+    maximumFractionDigits: 0,
+  }).format(value)
+
 export default function PlayersTab({ initialPlayers }: PlayersTabProps) {
   const [players, setPlayers] = useState(initialPlayers)
   const [searchTerm, setSearchTerm] = useState("")
@@ -246,9 +253,9 @@ export default function PlayersTab({ initialPlayers }: PlayersTabProps) {
                 <TableRow key={player.id} className="hover:bg-gray-50 border-b border-gray-100">
                   <TableCell className="font-medium text-gray-900">{player.name}</TableCell>
                   <TableCell className="text-gray-500">{player.position}</TableCell>
-                  <TableCell className="text-gray-500">₹{player.base_price}</TableCell>
+                  <TableCell className="text-gray-500">{formatCurrency(player.base_price)}</TableCell>
                   <TableCell className="text-gray-500">
-                    {player.current_price > 0 ? `₹${player.current_price}` : "-"}
+                    {player.current_price > 0 ? `${formatCurrency(player.current_price)}` : "-"}
                   </TableCell>
                   <TableCell>{getStatusBadge(player.status)}</TableCell>
                   <TableCell>

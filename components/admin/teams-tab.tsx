@@ -12,6 +12,13 @@ interface TeamsTabProps {
   initialTeams: any[]
 }
 
+const formatCurrency = (value: number) =>
+  new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: "INR",
+    maximumFractionDigits: 0,
+  }).format(value)
+
 export default function TeamsTab({ initialTeams }: TeamsTabProps) {
   const [teams, setTeams] = useState(initialTeams)
   const [teamSummaries, setTeamSummaries] = useState<any[]>([])
@@ -43,28 +50,30 @@ export default function TeamsTab({ initialTeams }: TeamsTabProps) {
       </div>
 
       {/* Teams Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {teamSummaries.map((summary) => (
           <Card key={summary.team_id} className="bg-white border-gray-200 shadow-sm">
             <CardHeader className="pb-3">
-              {summary.logo && (
-                <div className="mb-3 flex justify-center">
-                  <img
-                    src={summary.logo || "/placeholder.svg?height=60&width=80&query=team logo"}
-                    alt={`${summary.team_name} logo`}
-                    className="w-16 h-12 sm:w-20 sm:h-15 md:w-24 md:h-18 object-contain rounded-lg border-2 border-amber-500"
-                  />
+              <div className="flex items-center justify-between w-full">
+                {/* Logo + Team Name */}
+                <div className="flex items-center space-x-3">
+                  {summary.team_logo && (
+                    <img
+                      src={summary.team_logo || "/placeholder.svg?height=40&width=40&query=team logo"}
+                      alt={`${summary.team_name} logo`}
+                      className="w-20 h-30 object-contain rounded-md border border-blue-500"
+                    />
+                  )}
+                  <CardTitle className="text-gray-900 text-lg">{summary.team_name}</CardTitle>
                 </div>
-              )}
 
-              <div className="flex items-center justify-between">
-                <Trophy className="h-5 w-5 text-amber-500" />
+                {/* Player Count Badge on the Right */}
                 <Badge variant="outline" className="text-xs border-gray-300 text-gray-700">
                   {(summary.players_count || 0)} players
                 </Badge>
               </div>
-              <CardTitle className="text-gray-900 text-lg">{summary.team_name}</CardTitle>
             </CardHeader>
+
             <CardContent className="space-y-4">
               {summary.owner_name && (
                 <div className="flex items-center space-x-3 p-3 bg-amber-50 rounded-lg border border-amber-200">
@@ -85,7 +94,7 @@ export default function TeamsTab({ initialTeams }: TeamsTabProps) {
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-600">Budget Used</span>
                   <span className="text-gray-900 font-medium">
-                    ₹{(summary.total_spent || 0)} / ₹9L
+                    {formatCurrency(summary.total_spent || 0)} / ₹9L
                   </span>
                 </div>
                 <Progress value={((summary.total_spent || 0) / totalBudget) * 100} className="h-2" />
@@ -97,7 +106,7 @@ export default function TeamsTab({ initialTeams }: TeamsTabProps) {
                   <DollarSign className="h-4 w-4 text-emerald-500" />
                   <span className="text-sm text-gray-600">Remaining</span>
                 </div>
-                <span className="text-gray-900 font-medium">₹{(summary.budget)}</span>
+                <span className="text-gray-900 font-medium">{formatCurrency(summary.budget)}</span>
               </div>
 
               {/* Players Count */}
@@ -136,14 +145,17 @@ export default function TeamsTab({ initialTeams }: TeamsTabProps) {
               {teamSummaries.map((summary) => (
                 <TableRow key={summary.team_id} className="border-gray-200 hover:bg-gray-50">
                   <TableCell className="text-gray-900 font-medium">{summary.team_name}</TableCell>
-                  <TableCell className="text-gray-600">{(summary.players_count || 0)}</TableCell>
+                  <TableCell className="text-gray-600">{summary.players_count || 0}</TableCell>
                   <TableCell className="text-gray-600">
-                    ₹{(summary.total_spent || 0)}
+                    {formatCurrency(summary.total_spent || 0)}
                   </TableCell>
-                  <TableCell className="text-gray-600">₹{(summary.budget)}</TableCell>
+                  <TableCell className="text-gray-600">{formatCurrency(summary.budget)}</TableCell>
                   <TableCell>
                     <div className="flex items-center space-x-2">
-                      <Progress value={((summary.total_spent || 0) / totalBudget) * 100} className="w-16 h-2" />
+                      <Progress
+                        value={((summary.total_spent || 0) / totalBudget) * 100}
+                        className="w-16 h-2"
+                      />
                       <span className="text-gray-600 text-sm">
                         {(((summary.total_spent || 0) / totalBudget) * 100).toFixed(1)}%
                       </span>
@@ -164,7 +176,9 @@ export default function TeamsTab({ initialTeams }: TeamsTabProps) {
             <Card key={`players-${summary.team_id}`} className="bg-white border-gray-200 shadow-sm">
               <CardHeader>
                 <CardTitle className="text-gray-900">{summary.team_name} Squad</CardTitle>
-                <CardDescription className="text-gray-600">Players acquired by {summary.team_name}</CardDescription>
+                <CardDescription className="text-gray-600">
+                  Players acquired by {summary.team_name}
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -176,7 +190,7 @@ export default function TeamsTab({ initialTeams }: TeamsTabProps) {
                           {player.position}
                         </Badge>
                       </div>
-                      <p className="text-amber-500 font-medium">₹{player.final_price}</p>
+                      <p className="text-amber-500 font-medium">{formatCurrency(player.final_price)}</p>
                     </div>
                   ))}
                 </div>

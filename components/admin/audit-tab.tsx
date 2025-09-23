@@ -14,6 +14,13 @@ export default function AuditTab() {
   const [loading, setLoading] = useState(true)
   const [selectedTable, setSelectedTable] = useState("all")
 
+  const formatCurrency = (value: number) =>
+  new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: "INR",
+    maximumFractionDigits: 0,
+  }).format(value)
+
   useEffect(() => {
     const fetchAuditData = async () => {
       try {
@@ -136,7 +143,7 @@ export default function AuditTab() {
                   <TableCell className="text-gray-900 font-medium">{entry.team?.name}</TableCell>
                   <TableCell className="text-gray-600">{entry.player?.name || "-"}</TableCell>
                   <TableCell>{getTransactionBadge(entry.transaction_type)}</TableCell>
-                  <TableCell className="text-gray-900 font-medium">₹{entry.amount}</TableCell>
+                  <TableCell className="text-gray-900 font-medium">{formatCurrency(entry.amount)}</TableCell>
                   <TableCell className="text-gray-600">{entry.description}</TableCell>
                 </TableRow>
               ))}

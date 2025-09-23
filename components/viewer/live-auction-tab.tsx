@@ -154,37 +154,6 @@ export default function LiveAuctionTab({ currentPlayer, initialData }: LiveAucti
         </CardContent>
       </Card>
 
-      {/* ⏭ Coming Up Next */}
-      <Card className="bg-white border-gray-200 rounded-xl shadow-sm">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-gray-900 text-lg flex items-center">
-            <Users className="h-5 w-5 mr-2 text-amber-500" />
-            Coming Up Next
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            {availablePlayers.slice(1, 4).map((player, index) => (
-              <div
-                key={player.id}
-                className="flex items-center justify-between p-3 bg-gray-50 rounded-lg shadow-sm hover:bg-gray-100 transition"
-              >
-                <div className="flex items-center space-x-3">
-                  <div className="w-6 h-6 bg-amber-500 rounded-full flex items-center justify-center shadow-sm">
-                    <span className="text-white text-xs font-bold">{index + 2}</span>
-                  </div>
-                  <div>
-                    <p className="text-gray-900 font-medium text-sm">{player.name}</p>
-                    <p className="text-gray-600 text-xs">{player.position}</p>
-                  </div>
-                </div>
-                <p className="text-gray-900 font-semibold text-sm">{formatCurrency(player.base_price)}</p>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-
       {/* 🕑 Recent Activity */}
       <Card className="bg-white border-gray-200 rounded-xl shadow-sm">
         <CardHeader className="pb-2">

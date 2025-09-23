@@ -26,6 +26,12 @@ interface AdminDashboardProps {
   }
 }
 
+const formatCurrency = (value: number) =>
+  new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: "INR",
+    maximumFractionDigits: 0,
+  }).format(value)
 
 
 
@@ -121,7 +127,7 @@ export default function AdminDashboard({ user, initialData }: AdminDashboardProp
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold text-gray-900">
-                    ₹{(auctionOverview.total_budget || 0)}
+                    {formatCurrency(auctionOverview.total_budget || 0)}
                   </div>
                   <p className="text-xs text-gray-500 mt-2">Remaining budget</p>
                 </CardContent>
@@ -134,7 +140,7 @@ export default function AdminDashboard({ user, initialData }: AdminDashboardProp
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold text-gray-900">
-                    ₹{(auctionOverview.total_spent || 0)}
+                    {(auctionOverview.total_spent || 0)}
                   </div>
                   <p className="text-xs text-gray-500 mt-2">In player purchases</p>
                 </CardContent>
@@ -163,7 +169,7 @@ export default function AdminDashboard({ user, initialData }: AdminDashboardProp
                       </div>
                       <div className="text-right">
                         <p className="text-gray-900 font-semibold">
-                          ₹{assignment.final_price}
+                          {formatCurrency(assignment.final_price)}
                         </p>
                         <p className="text-xs text-gray-500">{new Date(assignment.assigned_at).toLocaleDateString("en-GB")}</p>
                       </div>

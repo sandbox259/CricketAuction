@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback, useMemo } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge"
 import { Gavel, DollarSign, Users, Clock, ArrowRight, Loader2 } from "lucide-react"
 import { supabase } from "@/lib/supabase/client"
+import { toast } from "sonner"
 
 interface AuctionTabProps {
   initialData: {
@@ -17,6 +18,13 @@ interface AuctionTabProps {
     assignments: any[]
   }
 }
+
+const formatCurrency = (value: number) =>
+  new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: "INR",
+    maximumFractionDigits: 0,
+  }).format(value)
 
 export default function AuctionTab({ initialData }: AuctionTabProps) {
   const [selectedPlayer, setSelectedPlayer] = useState<any>(null)
@@ -28,11 +36,70 @@ export default function AuctionTab({ initialData }: AuctionTabProps) {
   const [hasRecycledUnsold, setHasRecycledUnsold] = useState(false)
   const [playersData, setPlayersData] = useState(initialData.players)
   const [isRecycling, setIsRecycling] = useState(false)
+  const [currentPlayer, setCurrentPlayer] = useState<any | null>(null)
+  const [teams, setTeams] = useState(initialData.teams)
+  const [assignments, setAssignments] = useState(initialData.assignments)
 
-  const availablePlayers = playersData.filter((p) => p.status === "available")
-  const unsoldPlayers = playersData.filter((p) => p.status === "unsold")
-  const currentPlayer = availablePlayers[0] // For demo, show first available player
+  // Debug: Log the assignments data
+  useEffect(() => {
+    console.log("Initial assignments:", initialData.assignments)
+    console.log("Current assignments state:", assignments)
+  }, [])
 
+  // Fetch fresh assignments on component mount if initial data is empty
+  useEffect(() => {
+    const fetchAssignments = async () => {
+      if (assignments.length === 0) {
+        try {
+          const { data, error } = await supabase
+            .from('assignments')
+            .select(`
+              id,
+              player_id,
+              team_id,
+              final_price,
+              created_at,
+              player:players(id, name, position, image, city, previous_team),
+              team:teams(id, name, team_logo)
+            `)
+            .order('created_at', { ascending: false })
+            .limit(10)
+          
+          if (error) throw error
+          
+          if (data && data.length > 0) {
+            console.log("Fetched fresh assignments:", data)
+            setAssignments(data)
+          }
+        } catch (error) {
+          console.error("Error fetching assignments:", error)
+        }
+      }
+    }
+
+    fetchAssignments()
+  }, [])
+
+  const availablePlayers = useMemo(() => playersData.filter((p) => p.status === "available"), [playersData])
+  const unsoldPlayers = useMemo(() => playersData.filter((p) => p.status === "unsold"), [playersData])
+
+  // Helper function to pick a random available player
+  const nextRandomPlayer = useCallback(() => {
+    if (availablePlayers.length === 0) return null
+    const randomIndex = Math.floor(Math.random() * availablePlayers.length)
+    return availablePlayers[randomIndex]
+  }, [availablePlayers])
+
+  // Initialize current player when component mounts or available players change
+  useEffect(() => {
+    if (availablePlayers.length > 0 && !currentPlayer) {
+      setCurrentPlayer(nextRandomPlayer())
+    } else if (availablePlayers.length === 0 && currentPlayer) {
+      setCurrentPlayer(null)
+    }
+  }, [availablePlayers.length, currentPlayer, nextRandomPlayer])
+
+  // Recycling unsold players when no available players left
   useEffect(() => {
     const recycleUnsoldPlayers = async () => {
       if (availablePlayers.length === 0 && unsoldPlayers.length > 0 && !hasRecycledUnsold) {
@@ -51,7 +118,8 @@ export default function AuctionTab({ initialData }: AuctionTabProps) {
           setHasRecycledUnsold(true)
           console.log("[v0] Successfully recycled unsold players")
         } catch (error: any) {
-          console.log("[v0] Error recycling unsold players:", error.message)
+          console.error("[v0] Error recycling unsold players:", error.message)
+          toast.error("Failed to recycle unsold players")
         } finally {
           setIsRecycling(false)
         }
@@ -62,33 +130,141 @@ export default function AuctionTab({ initialData }: AuctionTabProps) {
   }, [availablePlayers.length, unsoldPlayers.length, hasRecycledUnsold])
 
   const handleAssignPlayer = async () => {
+    if (isProcessing) return // Prevent multiple concurrent calls
+
     if (!selectedPlayer || !selectedTeam || !finalPrice) {
-      console.log("Please select player, team, and enter final price")
+      toast.error("Please select player, team, and enter final price")
+      return
+    }
+
+    const finalPriceNumber = Number.parseFloat(finalPrice)
+    
+    if (isNaN(finalPriceNumber) || finalPriceNumber <= 0) {
+      toast.error("Please enter a valid final price")
       return
     }
 
     setIsAssigning(true)
     setIsProcessing(true)
+
     try {
+      // Fetch team summary dynamically
+      const { data: teamData, error: teamError } = await supabase.rpc(
+        "get_team_summary",
+        { p_team_id: Number.parseInt(selectedTeam) }
+      )
+
+      if (teamError) {
+        console.error("Team summary error:", teamError)
+        throw new Error("Failed to fetch team data")
+      }
+      
+      if (!teamData) {
+        throw new Error("Team data not found")
+      }
+
+      console.log("Team data received:", teamData)
+
+      const { budget_remaining, players_count } = teamData
+      
+      // Calculate purchased players count (excluding captain/vice-captain)
+      const purchasedPlayersCount = assignments.filter(a => a.team_id === Number.parseInt(selectedTeam)).length
+      const remainingSlots = 11 - purchasedPlayersCount // 11 players max per team (excluding captain/vice-captain)
+      const minRemainingBudget = (remainingSlots - 1) * 500 // -1 for the current player being purchased
+
+      console.log("Budget validation:", {
+        finalPrice: finalPriceNumber,
+        basePrice: selectedPlayer.base_price,
+        budgetRemaining: budget_remaining,
+        purchasedPlayers: purchasedPlayersCount,
+        remainingSlots: remainingSlots,
+        minRequired: minRemainingBudget,
+        wouldRemainAfterPurchase: budget_remaining - finalPriceNumber
+      })
+
+      // Constraint 1: finalPrice >= base_price
+      if (finalPriceNumber < selectedPlayer.base_price) {
+        toast.error(`Final price must be at least ${formatCurrency(selectedPlayer.base_price)}`)
+        return
+      }
+
+      // Constraint 2: finalPrice <= budget_remaining
+      if (finalPriceNumber > budget_remaining) {
+        toast.error(
+          `Insufficient budget! Final price: ${formatCurrency(finalPriceNumber)}, Available: ${formatCurrency(budget_remaining)}`
+        )
+        return
+      }
+
+      // Constraint 3: Check if team has remaining slots
+      if (remainingSlots <= 0) {
+        toast.error("Team has reached maximum player limit")
+        return
+      }
+
+      // Constraint 4: remaining budget >= minimum required for remaining slots
+      const budgetAfterPurchase = budget_remaining - finalPriceNumber
+      if (budgetAfterPurchase < minRemainingBudget && remainingSlots > 1) {
+        toast.error(
+          `Cannot assign player. After this purchase, you'll have ${formatCurrency(budgetAfterPurchase)} but need at least ${formatCurrency(minRemainingBudget)} for remaining ${remainingSlots - 1} slots (₹500 minimum each)`
+        )
+        return
+      }
+
+      // Assign player
       const { data, error } = await supabase.rpc("assign_player_to_team", {
         p_player_id: selectedPlayer.id,
         p_team_id: Number.parseInt(selectedTeam),
-        p_final_price: Number.parseFloat(finalPrice),
+        p_final_price: finalPriceNumber,
       })
 
-      if (error) throw error
+      if (error) {
+        console.error("Assignment error:", error)
+        throw new Error("Failed to assign player")
+      }
 
-      if (data.success) {
-        console.log("Player assigned successfully!")
-        setPlayersData((prev) => prev.map((p) => (p.id === selectedPlayer.id ? { ...p, status: "sold" } : p)))
+      if (data?.success) {
+        toast.success("Player assigned successfully!")
+        
+        // Update players data
+        setPlayersData((prev: any[]) =>
+          prev.map((p: any) =>
+            p.id === selectedPlayer.id ? { ...p, status: "sold" } : p
+          )
+        )
+
+        // Update assignments list
+        const newAssignment = {
+          id: Date.now(), // temporary ID
+          player_id: selectedPlayer.id,
+          team_id: Number.parseInt(selectedTeam),
+          final_price: finalPriceNumber,
+          player: selectedPlayer,
+          team: teams.find(t => t.id === Number.parseInt(selectedTeam))
+        }
+        setAssignments(prev => [newAssignment, ...prev])
+
+        // Update teams budget
+        setTeams((prev) =>
+          prev.map((t) =>
+            t.id === Number.parseInt(selectedTeam)
+              ? { ...t, budget: budgetAfterPurchase }
+              : t
+          )
+        )
+        
+        // Reset form
         setSelectedPlayer(null)
         setSelectedTeam("")
         setFinalPrice("")
+        setCurrentPlayer(nextRandomPlayer())
+
       } else {
-        console.log(data.error || "Failed to assign player")
+        toast.error(data?.error || "Failed to assign player")
       }
     } catch (error: any) {
-      console.log(error.message || "An error occurred")
+      console.error("Assignment error:", error)
+      toast.error(error.message || "An error occurred")
     } finally {
       setIsAssigning(false)
       setIsProcessing(false)
@@ -96,8 +272,11 @@ export default function AuctionTab({ initialData }: AuctionTabProps) {
   }
 
   const handleMarkUnsold = async (playerId: number) => {
+    if (isProcessing) return
+
     setIsMarkingUnsold(true)
     setIsProcessing(true)
+    
     try {
       const { data, error } = await supabase.rpc("mark_player_unsold", {
         p_player_id: playerId,
@@ -105,19 +284,31 @@ export default function AuctionTab({ initialData }: AuctionTabProps) {
 
       if (error) throw error
 
-      if (data.success) {
+      if (data?.success) {
         console.log("Player marked as unsold")
-        setPlayersData((prev) => prev.map((p) => (p.id === playerId ? { ...p, status: "unsold" } : p)))
+        setPlayersData((prev) =>
+          prev.map((p) =>
+            p.id === playerId ? { ...p, status: "unsold" } : p
+          )
+        )
+        setCurrentPlayer(nextRandomPlayer())
+        toast.success("Player marked as unsold")
       } else {
-        console.log(data.error || "Failed to mark player as unsold")
+        toast.error(data?.error || "Failed to mark player as unsold")
       }
     } catch (error: any) {
-      console.log(error.message || "An error occurred")
+      console.error("Mark unsold error:", error)
+      toast.error(error.message || "An error occurred")
     } finally {
       setIsMarkingUnsold(false)
       setIsProcessing(false)
     }
   }
+
+  const selectedPlayerValue = useMemo(() => 
+    selectedPlayer?.id?.toString() || "", 
+    [selectedPlayer?.id]
+  )
 
   return (
     <div className="space-y-6">
@@ -138,39 +329,70 @@ export default function AuctionTab({ initialData }: AuctionTabProps) {
                     <h3 className="text-lg font-semibold text-gray-900 mb-4">Current Player</h3>
                     <Card className="bg-gray-50 border border-gray-200 rounded-xl">
                       <CardContent className="p-6">
+                        {/* New layout: Image 40% (w-2/5), Content 60% (w-3/5) */}
                         <div className="flex items-start space-x-6 mb-6">
-                          <div className="flex-shrink-0">
+                          <div className="w-2/5 flex-shrink-0">
                             <img
                               src={
                                 currentPlayer.image ||
-                                `/placeholder.svg?height=120&width=120&query=cricket player ${currentPlayer.name || "/placeholder.svg"}`
+                                `/placeholder.svg?height=200&width=160&query=${encodeURIComponent(
+                                  "cricket player " + (currentPlayer.name || "")
+                                )}`
                               }
                               alt={currentPlayer.name}
-                              className="w-24 h-24 rounded-xl object-cover border-2 border-gray-200"
+                              className="w-full h-48 rounded-xl object-contain border-2 border-gray-200"
                             />
                           </div>
-                          <div className="flex-1">
+
+                          <div className="w-3/5 pl-6">
                             <div className="flex items-center justify-between mb-2">
                               <div>
                                 <h4 className="text-2xl font-bold text-gray-900">{currentPlayer.name}</h4>
                                 <p className="text-gray-500 font-medium">{currentPlayer.position}</p>
                               </div>
                               <Badge className="bg-amber-500 text-white px-3 py-1 rounded-full font-medium">
-                                Base: ₹{currentPlayer.base_price}
+                                Base: {formatCurrency(currentPlayer.base_price)}
                               </Badge>
                             </div>
+
+                            {/* Achievement badge - wraps correctly */}
                             {currentPlayer.achievement && (
                               <div className="mt-3">
                                 <Badge
                                   variant="outline"
-                                  className="bg-blue-50 text-blue-700 border-blue-200 px-3 py-1 rounded-full"
+                                  className="bg-blue-50 text-blue-700 border-blue-200 px-3 py-1 rounded-full whitespace-normal break-words max-w-full"
                                 >
                                   🏆 {currentPlayer.achievement}
                                 </Badge>
                               </div>
                             )}
+
+                            {/* City badge */}
+                            {currentPlayer.city && (
+                              <div className="mt-2">
+                                <Badge
+                                  variant="outline"
+                                  className="bg-green-50 text-green-700 border-green-200 px-3 py-1 rounded-full whitespace-normal break-words max-w-full"
+                                >
+                                  📍 {currentPlayer.city}
+                                </Badge>
+                              </div>
+                            )}
+
+                            {/* Previous team badge */}
+                            {currentPlayer.previous_team && (
+                              <div className="mt-2">
+                                <Badge
+                                  variant="outline"
+                                  className="bg-purple-50 text-purple-700 border-purple-200 px-3 py-1 rounded-full whitespace-normal break-words max-w-full"
+                                >
+                                  👥 {currentPlayer.previous_team}
+                                </Badge>
+                              </div>
+                            )}
                           </div>
                         </div>
+
                         <div className="flex space-x-3">
                           <Button
                             onClick={() => setSelectedPlayer(currentPlayer)}
@@ -178,12 +400,12 @@ export default function AuctionTab({ initialData }: AuctionTabProps) {
                             disabled={isProcessing}
                           >
                             <ArrowRight className="h-4 w-4 mr-2" />
-                            Next Player
+                            Select for Auction
                           </Button>
                           <Button
                             onClick={() => handleMarkUnsold(currentPlayer.id)}
                             variant="outline"
-                            className="border-red-500 text-red-500 hover:bg-red-500 font-semibold btn-scale"
+                            className="border-red-500 text-red-500 hover:bg-red-500 hover:text-white font-semibold btn-scale"
                             disabled={isProcessing}
                           >
                             {isMarkingUnsold ? (
@@ -202,14 +424,14 @@ export default function AuctionTab({ initialData }: AuctionTabProps) {
 
                   <div className="space-y-4">
                     <h3 className="text-lg font-semibold text-gray-900">Assign Player</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <div>
                         <Label className="text-gray-900 font-medium">Selected Player</Label>
                         <Select
-                          value={selectedPlayer?.id?.toString() || ""}
+                          value={selectedPlayerValue}
                           onValueChange={(value) => {
                             const player = availablePlayers.find((p) => p.id.toString() === value)
-                            setSelectedPlayer(player)
+                            setSelectedPlayer(player || null)
                           }}
                         >
                           <SelectTrigger className="bg-white border-gray-200 text-gray-900">
@@ -218,11 +440,11 @@ export default function AuctionTab({ initialData }: AuctionTabProps) {
                           <SelectContent className="bg-white border border-gray-200 text-gray-900">
                             {availablePlayers.map((player) => (
                               <SelectItem
-                                key={player.id}
+                                key={`player-${player.id}`}
                                 value={player.id.toString()}
                                 className="text-gray-900 data-[highlighted]:bg-blue-50 data-[highlighted]:text-blue-900"
                               >
-                                {player.name} ({player.position})
+                                {player.name}
                               </SelectItem>
                             ))}
                           </SelectContent>
@@ -236,29 +458,35 @@ export default function AuctionTab({ initialData }: AuctionTabProps) {
                             <SelectValue placeholder="Select winning team" />
                           </SelectTrigger>
                           <SelectContent className="bg-white border border-gray-200 text-gray-900">
-                            {initialData.teams.map((team) => (
+                            {teams.map((team) => (
                               <SelectItem
-                                key={team.id}
+                                key={`team-${team.id}`}
                                 value={team.id.toString()}
                                 className="text-gray-900 data-[highlighted]:bg-blue-50 data-[highlighted]:text-blue-900"
                               >
-                                {team.name} (₹{team.budget} remaining)
+                                {team.name}
                               </SelectItem>
                             ))}
                           </SelectContent>
                         </Select>
                       </div>
-                    </div>
 
-                    <div>
-                      <Label className="text-gray-900 font-medium">Final Price (₹)</Label>
-                      <Input
-                        type="number"
-                        placeholder="Enter final price"
-                        value={finalPrice}
-                        onChange={(e) => setFinalPrice(e.target.value)}
-                        className="bg-white border-gray-200 text-gray-900"
-                      />
+                      <div>
+                        <Label className="text-gray-900 font-medium">Final Price (₹)</Label>
+                        <Input
+                          type="number"
+                          placeholder="Enter final price"
+                          value={finalPrice}
+                          onChange={(e) => setFinalPrice(e.target.value)}
+                          className="bg-white border-gray-200 text-gray-900"
+                          min={selectedPlayer?.base_price || 0}
+                        />
+                        {selectedPlayer && (
+                          <p className="text-sm text-gray-500 mt-1">
+                            Minimum: {formatCurrency(selectedPlayer.base_price)}
+                          </p>
+                        )}
+                      </div>
                     </div>
 
                     <Button
@@ -304,29 +532,40 @@ export default function AuctionTab({ initialData }: AuctionTabProps) {
             </CardHeader>
             <CardContent>
               <div className="space-y-3 max-h-96 overflow-y-auto">
-                {initialData.assignments.slice(0, 10).map((assignment: any, index: number) => (
+                {(assignments.length > 0 ? assignments : initialData.assignments)
+                  .slice(0, 10)
+                  .map((assignment: any, index: number) => (
                   <div
-                    key={assignment.id}
+                    key={`assignment-${assignment.id}-${index}`}
                     className={`flex items-center justify-between p-3 bg-gray-50 rounded-lg fade-in`}
                     style={{ animationDelay: `${index * 0.1}s` }}
                   >
                     <div className="flex items-center space-x-3">
                       <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
                       <div>
-                        <p className="text-gray-900 font-medium text-sm">{assignment.player?.name}</p>
-                        <p className="text-xs text-gray-500">{assignment.player?.position}</p>
+                        <p className="text-gray-900 font-medium text-sm">
+                          {assignment.player?.name || 'Unknown Player'}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          {assignment.player?.position || 'Unknown Position'}
+                        </p>
                       </div>
                     </div>
                     <div className="text-right">
                       <Badge className="bg-blue-600 text-white text-xs px-2 py-1 rounded-full">
-                        {assignment.team?.name}
+                        {assignment.team?.name || 'Unknown Team'}
                       </Badge>
                       <p className="text-xs text-gray-900 font-semibold mt-1">
-                        ₹{assignment.final_price}
+                        {formatCurrency(assignment.final_price || 0)}
                       </p>
                     </div>
                   </div>
                 ))}
+                {assignments.length === 0 && initialData.assignments.length === 0 && (
+                  <div className="text-center py-4 text-gray-500">
+                    No recent sales yet
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -351,7 +590,7 @@ export default function AuctionTab({ initialData }: AuctionTabProps) {
               <span className="text-gray-900 font-medium">Total Remaining Budget</span>
             </div>
             <p className="text-2xl font-bold text-gray-900 mt-2">
-              ₹{initialData.teams.reduce((sum, team) => sum + team.budget, 0)}
+              {formatCurrency(teams.reduce((sum, team) => sum + team.budget, 0))}
             </p>
           </CardContent>
         </Card>
@@ -362,7 +601,7 @@ export default function AuctionTab({ initialData }: AuctionTabProps) {
               <Clock className="h-4 w-4 text-amber-500" />
               <span className="text-gray-900 font-medium">Players Sold</span>
             </div>
-            <p className="text-2xl font-bold text-gray-900 mt-2">{initialData.assignments.length}</p>
+            <p className="text-2xl font-bold text-gray-900 mt-2">{assignments.length}</p>
           </CardContent>
         </Card>
       </div>

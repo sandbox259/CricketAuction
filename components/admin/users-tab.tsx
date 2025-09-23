@@ -23,6 +23,13 @@ interface UsersTabProps {
   teams: any[]
 }
 
+const formatCurrency = (value: number) =>
+  new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: "INR",
+    maximumFractionDigits: 0,
+  }).format(value)
+
 export default function UsersTab({ initialUsers, teams }: UsersTabProps) {
   const [users, setUsers] = useState(initialUsers)
   const [editingUser, setEditingUser] = useState<any>(null)
