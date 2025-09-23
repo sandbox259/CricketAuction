@@ -153,60 +153,6 @@ export default function TeamsStandingsTab({ teams }: TeamsStandingsTabProps) {
         </CardHeader>
       </Card>
 
-      {/* Teams Leaderboard */}
-      <Card className="bg-white border-gray-200 shadow-sm">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-gray-900 text-lg flex items-center">
-            <Trophy className="h-5 w-5 mr-2 text-orange-400" />
-            Team Standings
-          </CardTitle>
-          <CardDescription className="text-gray-400 text-sm">Ranked by {sortBy}</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            {sortedTeams.length === 0 ? (
-              <div className="flex flex-col items-center py-8 text-gray-400">
-                <Users className="h-8 w-8 mb-2" />
-                <p>No teams found</p>
-              </div>
-            ) : (
-              sortedTeams.map((team, index) => (
-                <div
-                  key={team.team_id}
-                  className="flex items-center space-x-3 p-3 bg-white/5 rounded-lg transition-all hover:shadow-md hover:-translate-y-0.5"
-                >
-                  <div className="flex-shrink-0">
-                    <div
-                      className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm ${
-                        index === 0
-                          ? "bg-yellow-500 text-white"
-                          : index === 1
-                          ? "bg-gray-400 text-white"
-                          : index === 2
-                          ? "bg-orange-600 text-white"
-                          : "bg-gray-600 text-white"
-                      }`}
-                    >
-                      {index + 1}
-                    </div>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-gray-900 font-medium text-sm truncate">{team.team_name}</p>
-                    <p className="text-gray-400 text-xs">{team.players_count || 0} players</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-gray-900 font-medium text-sm">
-                      {formatCurrency(team.total_spent || 0)}
-                    </p>
-                    <p className="text-gray-400 text-xs">spent</p>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        </CardContent>
-      </Card>
-
       {/* Individual Team Cards */}
       <div className="space-y-3">
         {sortedTeams.map((team, idx) => (
