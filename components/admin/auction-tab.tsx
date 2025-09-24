@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
-import { Gavel, DollarSign, Users, Clock, ArrowRight, Loader2 } from "lucide-react"
+import { Gavel, DollarSign, Users, Clock, ArrowRight, Loader2, Shuffle } from "lucide-react"
 import { supabase } from "@/lib/supabase/client"
 import { toast } from "sonner"
 
@@ -33,12 +33,12 @@ export default function AuctionTab({ initialData }: AuctionTabProps) {
   const [isProcessing, setIsProcessing] = useState(false)
   const [isAssigning, setIsAssigning] = useState(false)
   const [isMarkingUnsold, setIsMarkingUnsold] = useState(false)
-  const [hasRecycledUnsold, setHasRecycledUnsold] = useState(false)
   const [playersData, setPlayersData] = useState(initialData.players)
   const [isRecycling, setIsRecycling] = useState(false)
   const [currentPlayer, setCurrentPlayer] = useState<any | null>(null)
   const [teams, setTeams] = useState(initialData.teams)
   const [assignments, setAssignments] = useState(initialData.assignments)
+  const [isShuffling, setIsShuffling] = useState(false)
 
   // Debug: Log the assignments data
   useEffect(() => {
@@ -90,33 +90,41 @@ export default function AuctionTab({ initialData }: AuctionTabProps) {
     return availablePlayers[randomIndex]
   }, [availablePlayers])
 
-  // Initialize current player when component mounts or available players change
-  useEffect(() => {
-    if (availablePlayers.length > 0 && !currentPlayer) {
-      setCurrentPlayer(nextRandomPlayer())
-    } else if (availablePlayers.length === 0 && currentPlayer) {
-      setCurrentPlayer(null)
-    }
-  }, [availablePlayers.length, currentPlayer, nextRandomPlayer])
-
   // Recycling unsold players when no available players left
   useEffect(() => {
     const recycleUnsoldPlayers = async () => {
-      if (availablePlayers.length === 0 && unsoldPlayers.length > 0 && !hasRecycledUnsold) {
-        console.log("[v0] No available players, recycling unsold players...")
+      // Only recycle if:
+      // 1. No available players
+      // 2. There are unsold players  
+      // 3. Not currently processing any action
+      // 4. Not already recycling
+      if (availablePlayers.length === 0 && unsoldPlayers.length > 0 && !isProcessing && !isRecycling) {
+        console.log("[v0] No available players, recycling", unsoldPlayers.length, "unsold players...")
         setIsRecycling(true)
+        
         try {
-          const { error } = await supabase.from("players").update({ status: "available" }).eq("status", "unsold")
+          // Update all unsold players to available in database
+          const { error } = await supabase
+            .from("players")
+            .update({ status: "available" })
+            .eq("status", "unsold")
 
           if (error) throw error
 
-          const { data: updatedPlayers, error: fetchError } = await supabase.from("players").select("*").order("name")
+          // Fetch updated players data
+          const { data: updatedPlayers, error: fetchError } = await supabase
+            .from("players")
+            .select("*")
+            .order("name")
 
           if (fetchError) throw fetchError
 
+          // Update local state
           setPlayersData(updatedPlayers || [])
-          setHasRecycledUnsold(true)
-          console.log("[v0] Successfully recycled unsold players")
+          
+          console.log("[v0] Successfully recycled", unsoldPlayers.length, "players to available status")
+          toast.success(`Recycled ${unsoldPlayers.length} unsold players back to auction pool`)
+          
         } catch (error: any) {
           console.error("[v0] Error recycling unsold players:", error.message)
           toast.error("Failed to recycle unsold players")
@@ -126,8 +134,49 @@ export default function AuctionTab({ initialData }: AuctionTabProps) {
       }
     }
 
-    recycleUnsoldPlayers()
-  }, [availablePlayers.length, unsoldPlayers.length, hasRecycledUnsold])
+    // Add a small delay to ensure state updates are complete
+    const timeoutId = setTimeout(recycleUnsoldPlayers, 500)
+    
+    return () => clearTimeout(timeoutId)
+  }, [availablePlayers.length, unsoldPlayers.length, isProcessing, isRecycling])
+
+  // Shuffle button handler - sets current player and updates database
+  const handleShuffle = async () => {
+    if (isShuffling || isProcessing) return
+
+    setIsShuffling(true)
+    setIsProcessing(true)
+
+    try {
+      const next = nextRandomPlayer()
+      
+      // Update the current player state
+      setCurrentPlayer(next)
+
+      // Persist to Supabase auction_state table
+      const { error } = await supabase
+        .from("auction_state")
+        .update({ current_player_id: next ? next.id : null })
+        .eq("id", 1)
+
+      if (error) {
+        console.error("Error updating auction state:", error)
+        toast.error("Failed to update current player")
+      } else {
+        if (next) {
+          toast.success(`New player: ${next.name}`)
+        } else {
+          toast.info("No more players available")
+        }
+      }
+    } catch (error: any) {
+      console.error("Shuffle error:", error)
+      toast.error(error.message || "An error occurred during shuffle")
+    } finally {
+      setIsShuffling(false)
+      setIsProcessing(false)
+    }
+  }
 
   const handleAssignPlayer = async () => {
     if (isProcessing) return // Prevent multiple concurrent calls
@@ -169,7 +218,7 @@ export default function AuctionTab({ initialData }: AuctionTabProps) {
       
       // Calculate purchased players count (excluding captain/vice-captain)
       const purchasedPlayersCount = assignments.filter(a => a.team_id === Number.parseInt(selectedTeam)).length
-      const remainingSlots = 11 - purchasedPlayersCount // 11 players max per team (excluding captain/vice-captain)
+      const remainingSlots = 12 - purchasedPlayersCount // 11 players max per team (excluding captain/vice-captain)
       const minRemainingBudget = (remainingSlots - 1) * 500 // -1 for the current player being purchased
 
       console.log("Budget validation:", {
@@ -278,7 +327,9 @@ export default function AuctionTab({ initialData }: AuctionTabProps) {
         setSelectedPlayer(null)
         setSelectedTeam("")
         setFinalPrice("")
-        setCurrentPlayer(nextRandomPlayer())
+
+        // Clear current player - user needs to shuffle for next player
+        setCurrentPlayer(null)
 
       } else {
         toast.error(data?.error || "Failed to assign player")
@@ -312,7 +363,10 @@ export default function AuctionTab({ initialData }: AuctionTabProps) {
             p.id === playerId ? { ...p, status: "unsold" } : p
           )
         )
-        setCurrentPlayer(nextRandomPlayer())
+        
+        // Clear current player - user needs to shuffle for next player
+        setCurrentPlayer(null)
+
         toast.success("Player marked as unsold")
       } else {
         toast.error(data?.error || "Failed to mark player as unsold")
@@ -416,6 +470,23 @@ export default function AuctionTab({ initialData }: AuctionTabProps) {
 
                         <div className="flex space-x-3">
                           <Button
+                            onClick={handleShuffle}
+                            disabled={isProcessing}
+                            className="bg-blue-600 hover:bg-blue-700 text-white font-semibold btn-scale"
+                          >
+                            {isShuffling ? (
+                              <>
+                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                Shuffling...
+                              </>
+                            ) : (
+                              <>
+                                <Shuffle className="h-4 w-4 mr-2" />
+                                Shuffle
+                              </>
+                            )}
+                          </Button>
+                          <Button
                             onClick={() => setSelectedPlayer(currentPlayer)}
                             className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold btn-scale"
                             disabled={isProcessing}
@@ -513,7 +584,7 @@ export default function AuctionTab({ initialData }: AuctionTabProps) {
                     <Button
                       onClick={handleAssignPlayer}
                       disabled={isProcessing || !selectedPlayer || !selectedTeam || !finalPrice}
-                      className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold btn-scale"
+                      className="bg-blue-600 hover:bg-blue-700 text-white font-semibold btn-scale"
                     >
                       {isAssigning ? (
                         <>
@@ -528,13 +599,34 @@ export default function AuctionTab({ initialData }: AuctionTabProps) {
                 </div>
               ) : (
                 <div className="text-center py-8">
-                  {isRecycling || (unsoldPlayers.length > 0 && !hasRecycledUnsold) ? (
+                  {isRecycling ? (
                     <div className="space-y-3">
                       <Loader2 className="h-8 w-8 animate-spin mx-auto text-amber-500" />
                       <p className="text-gray-900 font-medium">Recycling unsold players...</p>
                       <p className="text-gray-500 text-sm">
                         Making {unsoldPlayers.length} unsold players available for auction again
                       </p>
+                    </div>
+                  ) : availablePlayers.length > 0 ? (
+                    <div className="space-y-4">
+                      <p className="text-gray-500">Click "Shuffle" to show the next player</p>
+                      <Button
+                        onClick={handleShuffle}
+                        disabled={isProcessing}
+                        className="bg-blue-600 hover:bg-blue-700 text-white font-semibold btn-scale px-8 py-3 text-lg"
+                      >
+                        {isShuffling ? (
+                          <>
+                            <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+                            Shuffling...
+                          </>
+                        ) : (
+                          <>
+                            <Shuffle className="h-5 w-5 mr-2" />
+                            Shuffle Next Player
+                          </>
+                        )}
+                      </Button>
                     </div>
                   ) : (
                     <p className="text-gray-500">No players available for auction</p>

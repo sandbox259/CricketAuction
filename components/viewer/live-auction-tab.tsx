@@ -8,7 +8,7 @@ import { Gavel, Clock, TrendingUp, Users, Trophy, History } from "lucide-react"
 
 interface LiveAuctionTabProps {
   currentPlayer: any
-  initialData: {
+  data: {
     teams: any[]
     players: any[]
     assignments: any[]
@@ -16,7 +16,7 @@ interface LiveAuctionTabProps {
   }
 }
 
-export default function LiveAuctionTab({ currentPlayer, initialData }: LiveAuctionTabProps) {
+export default function LiveAuctionTab({ currentPlayer, data }: LiveAuctionTabProps) {
   const [timeElapsed, setTimeElapsed] = useState(0)
 
   useEffect(() => {
@@ -40,10 +40,10 @@ export default function LiveAuctionTab({ currentPlayer, initialData }: LiveAucti
     maximumFractionDigits: 0,
   }).format(value)
 
-  const availablePlayers = initialData.players.filter((p) => p.status === "available")
+  const availablePlayers = data.players.filter((p) => p.status === "available")
   const auctionProgress =
-    ((initialData.auctionOverview.sold_players + initialData.auctionOverview.unsold_players) /
-      initialData.auctionOverview.total_players) *
+    ((data.auctionOverview.sold_players + data.auctionOverview.unsold_players) /
+      data.auctionOverview.total_players) *
     100
 
 
@@ -71,7 +71,7 @@ export default function LiveAuctionTab({ currentPlayer, initialData }: LiveAucti
                     `/placeholder.svg?height=120&width=160&query=cricket player ${currentPlayer.name || "/placeholder.svg"}`
                   }
                   alt={currentPlayer.name}
-                  className="w-24 h-24 md:w-40 md:h-32 rounded-full md:rounded-xl object-cover border-2 border-blue-600 shadow-sm"
+                  className="w-24 h-24 md:w-40 md:h-32 rounded-full md:rounded-xl object-contain border-2 border-blue-600 shadow-sm"
                 />
               </div>
               <div className="flex-1 text-center md:text-left">
@@ -125,9 +125,9 @@ export default function LiveAuctionTab({ currentPlayer, initialData }: LiveAucti
             <div className="flex justify-between text-sm">
               <span className="text-gray-600">Players Completed</span>
               <span className="text-gray-900 font-semibold">
-                {(initialData.auctionOverview.sold_players || 0) +
-                  (initialData.auctionOverview.unsold_players || 0)}{" "}
-                / {initialData.auctionOverview.total_players || 0}
+                {(data.auctionOverview.sold_players || 0) +
+                  (data.auctionOverview.unsold_players || 0)}{" "}
+                / {data.auctionOverview.total_players || 0}
               </span>
             </div>
             <Progress value={auctionProgress} className="h-2 rounded-full" />
@@ -136,13 +136,13 @@ export default function LiveAuctionTab({ currentPlayer, initialData }: LiveAucti
           <div className="grid grid-cols-3 gap-3 text-center">
             <div className="p-2 bg-emerald-50 rounded-lg border border-emerald-200 shadow-sm">
               <p className="text-emerald-600 font-bold text-lg">
-                {initialData.auctionOverview.sold_players || 0}
+                {data.auctionOverview.sold_players || 0}
               </p>
               <p className="text-xs text-gray-600">Sold</p>
             </div>
             <div className="p-2 bg-red-50 rounded-lg border border-red-200 shadow-sm">
               <p className="text-red-600 font-bold text-lg">
-                {initialData.auctionOverview.unsold_players || 0}
+                {data.auctionOverview.unsold_players || 0}
               </p>
               <p className="text-xs text-gray-600">Unsold</p>
             </div>
@@ -164,7 +164,7 @@ export default function LiveAuctionTab({ currentPlayer, initialData }: LiveAucti
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
-            {initialData.assignments.slice(0, 3).map((assignment: any) => (
+            {data.assignments.slice(0, 3).map((assignment: any) => (
               <div
                 key={assignment.id}
                 className="flex items-center justify-between p-3 bg-gray-50 rounded-lg shadow-sm hover:bg-gray-100 transition"

@@ -43,7 +43,7 @@ export default function TeamsStandingsTab({ teams }: TeamsStandingsTabProps) {
   const [expandedTeams, setExpandedTeams] = useState<Set<number>>(new Set())
   const [sortBy, setSortBy] = useState<"spent" | "remaining" | "squad">("spent")
 
-  const totalBudget = 900000 // 9 Lakhs
+  const totalBudget = 150000 // 9 Lakhs
 
   const filteredTeams = teamSummaries.filter((team) => {
     const matchesSearch =
@@ -290,7 +290,7 @@ export default function TeamsStandingsTab({ teams }: TeamsStandingsTabProps) {
                               "/placeholder.svg?height=32&width=32&query=cricket player portrait"
                             }
                             alt={player.name}
-                            className="w-8 h-8 rounded-full object-cover border border-gray-200"
+                            className="w-8 h-8 rounded-md object-contain border border-gray-200"
                           />
                           <div>
                             <p className="text-gray-900 font-medium">{player.name}</p>

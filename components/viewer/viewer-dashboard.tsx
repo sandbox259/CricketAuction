@@ -37,7 +37,7 @@ export default function ViewerDashboard({ user, initialData }: ViewerDashboardPr
   const { auctionOverview } = data
 
   const availablePlayers = data.players.filter((p) => p.status === "available")
-  const currentPlayer = availablePlayers[0]
+  const currentPlayer = data.currentPlayer || null
 
   const tabs = [
     { key: "live", label: "Live", Icon: PlayCircle },
@@ -129,7 +129,7 @@ export default function ViewerDashboard({ user, initialData }: ViewerDashboardPr
       <div className="flex-1 px-4 pb-20">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
           <TabsContent value="live" className="space-y-4">
-            <LiveAuctionTab currentPlayer={currentPlayer} initialData={data} />
+            <LiveAuctionTab currentPlayer={currentPlayer} data={data} />
           </TabsContent>
 
           <TabsContent value="players" className="space-y-4">

@@ -9,7 +9,25 @@ interface AuctionData {
   players: any[]
   assignments: any[]
   auctionOverview: any
+  currentPlayer?: {
+    id: number
+    name: string
+    image?: string
+    position?: string
+    achievement?: string
+    base_price?: number
+  } | null
 }
+
+interface PostgresChangePayload<T> {
+  old: T | null
+  new: T | null
+  schema: string
+  table: string
+  commit_timestamp: string
+  eventType: string
+}
+
 
 export function useRealtimeAuction(initialData: AuctionData) {
   const [data, setData] = useState<AuctionData>(initialData)
@@ -84,6 +102,27 @@ export function useRealtimeAuction(initialData: AuctionData) {
           )
           .subscribe()
 
+        const auctionStateChannel = supabase
+            .channel("auction-state")
+            .on(
+              "postgres_changes",
+              { event: "*", schema: "public", table: "auction_state" },
+              async (payload: PostgresChangePayload<{ current_player_id: number | null }>) => {
+                const newState = payload.new
+                if (newState) {
+                  const currentPlayerId = newState.current_player_id
+                  const { data: currentPlayerData } = await supabase
+                    .from("players")
+                    .select("id, name, image, position, achievement, base_price")
+                    .eq("id", currentPlayerId)
+                  setData((prev) => ({ ...prev, currentPlayer: currentPlayerData?.[0] || null }))
+                  updateTimestamp()
+                }
+              }
+            )
+            .subscribe()
+
+
         // Auction Overview
         const overviewChannel = supabase
           .channel("auction-overview")
@@ -100,7 +139,7 @@ export function useRealtimeAuction(initialData: AuctionData) {
           )
           .subscribe()
 
-        channels = [playersChannel, assignmentsChannel, teamsChannel, overviewChannel]
+        channels = [playersChannel, assignmentsChannel, teamsChannel, overviewChannel, auctionStateChannel]
         setIsConnected(true)
       } catch (error) {
         console.error("Error setting up realtime subscriptions:", error)
