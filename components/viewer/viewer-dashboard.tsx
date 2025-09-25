@@ -181,6 +181,12 @@ export default function ViewerDashboard({ user, initialData }: ViewerDashboardPr
               <Card className="flex items-center justify-center p-4 shadow-sm">
                 <img src="/logos/sigdi.jpg" alt="Sponsor 6" className="h-12 w-auto object-contain" />
               </Card>
+              <Card className="flex items-center justify-center p-4 shadow-sm">
+                <img src="/logos/mukh.jpg" alt="Sponsor 6" className="h-12 w-auto object-contain" />
+              </Card>
+              <Card className="flex items-center justify-center p-4 shadow-sm">
+                <img src="/logos/sarjif.jpg" alt="Sponsor 6" className="h-12 w-auto object-contain" />
+              </Card>
             </div>
           </TabsContent>
         </Tabs>
