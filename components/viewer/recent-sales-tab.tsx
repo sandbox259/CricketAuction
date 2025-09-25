@@ -54,9 +54,9 @@ export default function RecentSalesTab({ assignments }: RecentSalesTabProps) {
         return "bg-gradient-to-r from-blue-500 to-blue-700"
       case "Bowler":
         return "bg-gradient-to-r from-red-500 to-red-700"
-      case "All-rounder":
-        return "bg-gradient-to-r from-green-500 to-green-700"
-      case "Wicket-keeper":
+      case "All Rounder":
+        return "bg-gradient-to-r from-yellow-500 to-green-700"
+      case "Wicket Keeper":
         return "bg-gradient-to-r from-purple-500 to-purple-700"
       default:
         return "bg-gray-600"
