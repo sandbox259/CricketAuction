@@ -186,7 +186,7 @@ export default function TeamsStandingsTab({ teams }: TeamsStandingsTabProps) {
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-400">Budget Used</span>
                   <span className="text-gray-900">
-                    {formatCurrency(team.total_spent || 0)} / ₹9L
+                    {formatCurrency(team.total_spent || 0)} / ₹1.5L
                   </span>
                 </div>
                 <Progress
