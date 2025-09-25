@@ -4,7 +4,16 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Tabs, TabsContent } from "@/components/ui/tabs"
-import { LogOut, Trophy, Users, DollarSign, PlayCircle, Users2, ShoppingBag } from "lucide-react"
+import {
+  LogOut,
+  Trophy,
+  Users,
+  DollarSign,
+  PlayCircle,
+  Users2,
+  ShoppingBag,
+  Star // for sponsors icon
+} from "lucide-react"
 import { signOut } from "@/lib/actions"
 import { useRealtimeAuction } from "@/hooks/use-realtime-auction"
 import { ConnectionStatus } from "@/components/ui/connection-status"
@@ -44,6 +53,7 @@ export default function ViewerDashboard({ user, initialData }: ViewerDashboardPr
     { key: "players", label: "Players", Icon: Users2 },
     { key: "teams", label: "Teams", Icon: Trophy },
     { key: "sales", label: "Sales", Icon: ShoppingBag },
+    { key: "sponsors", label: "Sponsors", Icon: Star }, // ⭐ New Tab
   ]
 
   return (
@@ -53,9 +63,13 @@ export default function ViewerDashboard({ user, initialData }: ViewerDashboardPr
         <div className="px-4 py-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
-              <div className="p-2 rounded-full bg-amber-100">
-                <Trophy className="h-5 w-5 text-amber-600" />
-              </div>
+              {/* Trophy Icon */}
+              {/* Logo Placeholder */}
+              <img
+                src="/logos/logo.png"
+                alt="Auction Logo"
+                className="h-8 w-auto object-contain"
+              />
               <div>
                 <h1 className="text-lg font-bold text-gray-900">Cricket Auction</h1>
                 <ConnectionStatus isConnected={isConnected} lastUpdate={lastUpdate} />
@@ -142,6 +156,33 @@ export default function ViewerDashboard({ user, initialData }: ViewerDashboardPr
 
           <TabsContent value="sales" className="space-y-4">
             <RecentSalesTab assignments={data.assignments} />
+          </TabsContent>
+
+          {/* Sponsors Section */}
+          <TabsContent value="sponsors" className="space-y-4">
+            <h2 className="text-lg font-bold text-gray-900">Our Sponsors</h2>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+              {/* Replace src with actual sponsor logos */}
+              <Card className="flex items-center justify-center p-4 shadow-sm">
+                <img src="/logos/aashiyanalogo.jpg" alt="Sponsor 1" className="h-12 w-auto object-contain" />
+              </Card>
+              <Card className="flex items-center justify-center p-4 shadow-sm">
+                <img src="/logos/designer.jpg" alt="Sponsor 2" className="h-12 w-auto object-contain" />
+              </Card>
+              <Card className="flex items-center justify-center p-4 shadow-sm">
+                <img src="/logos/Humalogo.jpg" alt="Sponsor 3" className="h-12 w-auto object-contain" />
+              </Card>
+              <Card className="flex items-center justify-center p-4 shadow-sm">
+                <img src="/logos/mithiyaaj.jpg" alt="Sponsor 4" className="h-12 w-auto object-contain" />
+              </Card>
+              <Card className="flex items-center justify-center p-4 shadow-sm">
+                <img src="/logos/shahilogo.jpg" alt="Sponsor 5" className="h-12 w-auto object-contain" />
+              </Card>
+              <Card className="flex items-center justify-center p-4 shadow-sm">
+                <img src="/logos/sigdi.jpg" alt="Sponsor 6" className="h-12 w-auto object-contain" />
+              </Card>
+
+            </div>
           </TabsContent>
         </Tabs>
       </div>
