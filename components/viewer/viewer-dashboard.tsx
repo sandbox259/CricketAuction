@@ -140,7 +140,7 @@ export default function ViewerDashboard({ user, initialData }: ViewerDashboardPr
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 px-4 pb-20">
+      <div className="flex-1 px-4 pb-24">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
           <TabsContent value="live" className="space-y-4">
             <LiveAuctionTab currentPlayer={currentPlayer} data={data} />
@@ -181,32 +181,37 @@ export default function ViewerDashboard({ user, initialData }: ViewerDashboardPr
               <Card className="flex items-center justify-center p-4 shadow-sm">
                 <img src="/logos/sigdi.jpg" alt="Sponsor 6" className="h-12 w-auto object-contain" />
               </Card>
-
             </div>
           </TabsContent>
         </Tabs>
       </div>
 
-      {/* Floating Bottom Navigation */}
-      <nav className="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-50">
-        <div className="flex items-center justify-between w-full max-w-md mx-auto bg-white/90 backdrop-blur-md rounded-2xl shadow-lg border border-gray-200 px-6 py-2 space-x-6">
-          {tabs.map(({ key, label, Icon }) => (
-            <button
-              key={key}
-              aria-label={`${label} tab`}
-              onClick={() => setActiveTab(key)}
-              className={`flex flex-col items-center text-xs px-3 py-2 rounded-xl transition-colors duration-300 focus:outline-none focus:ring-0 ${
-                activeTab === key ? "bg-blue-50 text-blue-600" : "text-gray-500"
-              }`}
-            >
-              <Icon
-                className={`h-5 w-5 mb-1 transition-colors duration-300 ${
-                  activeTab === key ? "text-blue-600" : "text-gray-400"
+      {/* Floating Bottom Navigation - Fixed for Mobile */}
+      <nav className="fixed bottom-0 left-0 right-0 z-50 px-2 pb-2 sm:bottom-4 sm:left-1/2 sm:right-auto sm:transform sm:-translate-x-1/2 sm:px-0 sm:pb-0">
+        <div className="flex items-center justify-center w-full sm:w-auto">
+          <div className="flex items-center justify-between bg-white/95 backdrop-blur-md rounded-2xl shadow-lg border border-gray-200/50 p-1 w-full max-w-sm sm:max-w-none">
+            {tabs.map(({ key, label, Icon }) => (
+              <button
+                key={key}
+                aria-label={`${label} tab`}
+                onClick={() => setActiveTab(key)}
+                className={`flex flex-col items-center justify-center min-w-0 flex-1 sm:flex-none text-xs px-2 py-2 sm:px-3 rounded-xl transition-all duration-300 focus:outline-none focus:ring-0 ${
+                  activeTab === key 
+                    ? "bg-blue-100 text-blue-600 shadow-sm" 
+                    : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"
                 }`}
-              />
-              {label}
-            </button>
-          ))}
+              >
+                <Icon
+                  className={`h-4 w-4 sm:h-5 sm:w-5 mb-0.5 sm:mb-1 transition-colors duration-300 ${
+                    activeTab === key ? "text-blue-600" : "text-gray-400"
+                  }`}
+                />
+                <span className="truncate text-[10px] sm:text-xs leading-tight">
+                  {label}
+                </span>
+              </button>
+            ))}
+          </div>
         </div>
       </nav>
     </div>
