@@ -309,7 +309,7 @@ export default function TeamsStandingsTab({ teams }: TeamsStandingsTabProps) {
                         variant="ghost"
                         size="sm"
                         onClick={() => toggleExpandedPlayers(team.team_id)}
-                        className="w-full text-gray-400 hover:text-gray-600 hover:bg-gray-50"
+                        className="w-full text-gray-600 hover:text-gray-800 hover:bg-gray-50"
                       >
                         {expandedTeams.has(team.team_id) ? (
                           <>
