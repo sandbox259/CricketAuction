@@ -12,7 +12,8 @@ import {
   PlayCircle,
   Users2,
   ShoppingBag,
-  Star // for sponsors icon
+  Star, // for sponsors icon
+  Copyright
 } from "lucide-react"
 import { signOut } from "@/lib/actions"
 import { useRealtimeAuction } from "@/hooks/use-realtime-auction"
@@ -29,6 +30,14 @@ interface ViewerDashboardProps {
     players: any[]
     assignments: any[]
     auctionOverview: any
+    currentPlayer?: {
+      id: number
+      name: string
+      image?: string
+      position?: string
+      achievement?: string
+      base_price?: number
+    } | null
   }
 }
 
@@ -60,35 +69,43 @@ export default function ViewerDashboard({ user, initialData }: ViewerDashboardPr
     <div className="min-h-screen bg-gray-50 flex flex-col">
       {/* Header */}
       <header className="sticky top-0 z-50 border-b bg-gradient-to-r from-amber-100 via-white to-amber-50 shadow-sm">
-        <div className="px-4 py-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              {/* Trophy Icon */}
-              {/* Logo Placeholder */}
-              <img
-                src="/logos/logo.png"
-                alt="Auction Logo"
-                className="h-8 w-auto object-contain"
-              />
-              <div>
-                <h1 className="text-lg font-bold text-gray-900">Cricket Auction</h1>
-                <ConnectionStatus isConnected={isConnected} lastUpdate={lastUpdate} />
-              </div>
-            </div>
-            {user && (
-              <form action={signOut}>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="p-2 text-gray-600 hover:bg-gray-100 rounded-full"
-                >
-                  <LogOut className="h-4 w-4" />
-                </Button>
-              </form>
-            )}
-          </div>
+  <div className="px-4 py-3">
+    <div className="flex flex-col">
+      {/* Top row: Logo + ConnectionStatus + Logout */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center space-x-3">
+          <img
+            src="/logos/logo.png"
+            alt="Auction Logo"
+            className="h-8 w-auto object-contain md:h-10"
+          />
         </div>
-      </header>
+
+        <div className="flex items-center space-x-3">
+          <ConnectionStatus isConnected={isConnected} lastUpdate={lastUpdate} />
+
+          {user && (
+            <form action={signOut}>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="p-2 text-gray-600 hover:bg-gray-100 rounded-full"
+              >
+                <LogOut className="h-4 w-4" />
+              </Button>
+            </form>
+          )}
+        </div>
+      </div>
+
+      {/* Bottom row: Tournament Name */}
+      <h1 className="mt-2 text-center text-base font-bold text-gray-900 sm:text-lg md:text-xl lg:text-2xl">
+        CMSC Allumni Memorial Cup 2025
+      </h1>
+    </div>
+  </div>
+</header>
+
 
       {/* Live Status Banner */}
       {currentPlayer && (
@@ -140,7 +157,7 @@ export default function ViewerDashboard({ user, initialData }: ViewerDashboardPr
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 px-4 pb-24">
+      <div className="flex-1 px-4 pb-32"> {/* Increased bottom padding for footer space */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
           <TabsContent value="live" className="space-y-4">
             <LiveAuctionTab currentPlayer={currentPlayer} data={data} />
@@ -191,6 +208,31 @@ export default function ViewerDashboard({ user, initialData }: ViewerDashboardPr
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Footer */}
+      <footer className="mt-auto bg-gradient-to-r from-amber-100 via-white to-amber-50 border-t border-gray-200 px-4 py-6 pb-20 sm:pb-20">
+        <div className="max-w-4xl mx-auto">
+          <div className="flex flex-col items-center space-y-3">
+            {/* Copyright Info */}
+            <div className="flex items-center space-x-2 text-sm text-gray-600">
+              <Copyright className="h-4 w-4" />
+              <span>{new Date().getFullYear()} Cmsc Allumni. All rights reserved.</span>
+            </div>
+            
+            {/* Developer Credit */}
+            <div className="flex items-center space-x-2 text-xs text-gray-500">
+              <span>Developed by</span>
+              <span className="font-medium text-amber-600">Saad Rizwan Aibani</span>
+            </div>
+            
+            {/* Decorative Divider */}
+            <div className="flex items-center space-x-2">
+              <div className="h-0.5 w-8 bg-gradient-to-r from-transparent via-amber-300 to-transparent rounded-full"></div>
+              <div className="h-0.5 w-8 bg-gradient-to-r from-transparent via-amber-300 to-transparent rounded-full"></div>
+            </div>
+          </div>
+        </div>
+      </footer>
 
       {/* Floating Bottom Navigation - Fixed for Mobile */}
       <nav className="fixed bottom-0 left-0 right-0 z-50 px-2 pb-2 sm:bottom-4 sm:left-1/2 sm:right-auto sm:transform sm:-translate-x-1/2 sm:px-0 sm:pb-0">
