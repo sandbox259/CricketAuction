@@ -280,12 +280,12 @@ export default function AuctionTab({ initialData }: AuctionTabProps) {
       }
 
       // Constraint 2: finalPrice <= budget_remaining
-      if (finalPriceNumber > budget_remaining) {
-        toast.error(
-          `Insufficient budget! Final price: ${formatCurrency(finalPriceNumber)}, Available: ${formatCurrency(budget_remaining)}`
-        )
-        return
-      }
+      // if (finalPriceNumber > budget_remaining) {
+      //   toast.error(
+      //     `Insufficient budget! Final price: ${formatCurrency(finalPriceNumber)}, Available: ${formatCurrency(budget_remaining)}`
+      //   )
+      //   return
+      // }
 
       // Constraint 3: Check if team has remaining slots
       if (remainingSlots <= 0) {
