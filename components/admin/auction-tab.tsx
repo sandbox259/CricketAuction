@@ -294,13 +294,13 @@ export default function AuctionTab({ initialData }: AuctionTabProps) {
       }
 
       // Constraint 4: remaining budget >= minimum required for remaining slots
-      const budgetAfterPurchase = budget_remaining - finalPriceNumber
-      if (budgetAfterPurchase < minRemainingBudget && remainingSlots > 1) {
-        toast.error(
-          `Cannot assign player. After this purchase, you'll have ${formatCurrency(budgetAfterPurchase)} but need at least ${formatCurrency(minRemainingBudget)} for remaining ${remainingSlots - 1} slots (₹500 minimum each)`
-        )
-        return
-      }
+       const budgetAfterPurchase = budget_remaining - finalPriceNumber
+      // if (budgetAfterPurchase < minRemainingBudget && remainingSlots > 1) {
+      //   toast.error(
+      //     `Cannot assign player. After this purchase, you'll have ${formatCurrency(budgetAfterPurchase)} but need at least ${formatCurrency(minRemainingBudget)} for remaining ${remainingSlots - 1} slots (₹500 minimum each)`
+      //   )
+      //   return
+      // }
 
       // Assign player
       const { data, error } = await supabase.rpc("assign_player_to_team", {
