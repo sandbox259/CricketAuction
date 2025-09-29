@@ -13,7 +13,8 @@ import {
   Users2,
   ShoppingBag,
   Star, // for sponsors icon
-  Copyright
+  Copyright,
+  Grid3x3
 } from "lucide-react"
 import { signOut } from "@/lib/actions"
 import { useRealtimeAuction } from "@/hooks/use-realtime-auction"
@@ -48,6 +49,55 @@ const formatCurrency = (value: number) =>
     maximumFractionDigits: 0,
   }).format(value)
 
+function GroupsTab({ teams }: { teams: any[] }) {
+  // Configuration: Add team IDs to each group
+  const groupAIds = [11, 5, 3, 4, 2, 10] // Replace with actual team IDs for Group A
+  const groupBIds = [1, 8, 9, 6, 7, 12] // Replace with actual team IDs for Group B
+  
+  // Filter teams by their IDs
+  const groupA = teams.filter(team => groupAIds.includes(team.id))
+  const groupB = teams.filter(team => groupBIds.includes(team.id))
+
+  const GroupTable = ({ title, teams }: { title: string; teams: any[] }) => (
+    <Card className="shadow-sm  border-2 border-amber-500">
+      <CardContent className="p-4" >
+        <h3 className="text-base font-bold text-gray-900 mb-3">{title}</h3>
+        <div className="space-y-2">
+          {teams.map((team, idx) => (
+            <div
+              key={team.id}
+              className="flex items-center justify-between p-2 rounded-lg hover:bg-gray-50 transition-colors"
+            >
+              <div className="flex items-center space-x-3 flex-1 min-w-0">
+                <span className="text-sm font-medium text-gray-500 w-6 flex-shrink-0">
+                  {idx + 1}
+                </span>
+                {team.team_logo && (
+                  <img
+                    src={team.team_logo}
+                    alt={team.name}
+                    className="h-8 w-8 object-contain flex-shrink-0"
+                  />
+                )}
+                <span className="text-sm font-medium text-gray-900 truncate border border-amber-500 px-2 py-1 rounded-md">
+                  {team.name}
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
+  )
+
+  return (
+    <div className="space-y-4">
+      <GroupTable title="Group A" teams={groupA} />
+      <GroupTable title="Group B" teams={groupB} />
+    </div>
+  )
+}
+
 export default function ViewerDashboard({ user, initialData }: ViewerDashboardProps) {
   const [activeTab, setActiveTab] = useState("live")
 
@@ -61,6 +111,7 @@ export default function ViewerDashboard({ user, initialData }: ViewerDashboardPr
     { key: "live", label: "Live", Icon: PlayCircle },
     { key: "players", label: "Players", Icon: Users2 },
     { key: "teams", label: "Teams", Icon: Trophy },
+    { key: "groups", label: "Groups", Icon: Grid3x3 },
     { key: "sales", label: "Sales", Icon: ShoppingBag },
     { key: "sponsors", label: "Sponsors", Icon: Star }, // ⭐ New Tab
   ]
@@ -169,6 +220,10 @@ export default function ViewerDashboard({ user, initialData }: ViewerDashboardPr
 
           <TabsContent value="teams" className="space-y-4">
             <TeamsStandingsTab teams={data.teams} />
+          </TabsContent>
+
+          <TabsContent value="groups" className="space-y-4">
+            <GroupsTab teams={data.teams} />
           </TabsContent>
 
           <TabsContent value="sales" className="space-y-4">
