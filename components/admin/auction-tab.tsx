@@ -84,32 +84,11 @@ export default function AuctionTab({ initialData }: AuctionTabProps) {
   const unsoldPlayers = useMemo(() => playersData.filter((p) => p.status === "unsold"), [playersData])
 
   // Helper function to pick a random available player
-  const nextRandomPlayer = useCallback(() => {
-  if (availablePlayers.length === 0) return null;
-
-  // If 4 players remain, try to force player 81
-  if (availablePlayers.length === 4) {
-    const forcedPlayer = availablePlayers.find((p) => p.id === 81);
-    if (forcedPlayer) {
-      return forcedPlayer; // ✅ Hard guarantee if he's still around
-    }
-    // If he's already sold/absent → just continue with normal random
-  }
-
-  if (availablePlayers.length === 9) {
-    const forcedPlayer1 = availablePlayers.find((p) => p.id === 29);
-    if (forcedPlayer1) {
-      return forcedPlayer1; // ✅ Hard guarantee if he's still around
-    }
-    // If he's already sold/absent → just continue with normal random
-  }
-
-  // Random choice (exclude 81 until last 4 if he's still present)
-  const filteredPlayers = availablePlayers.filter((p) => p.id !== 81 && p.id !== 29);
-  const pool = filteredPlayers.length > 0 ? filteredPlayers : availablePlayers;
-  const randomIndex = Math.floor(Math.random() * pool.length);
-  return pool[randomIndex];
-}, [availablePlayers]);
+  const nextRandomPlayer = useCallback(() => { if (availablePlayers.length === 0)  
+  return null 
+  const randomIndex = Math.floor(Math.random() * availablePlayers.length) 
+  return availablePlayers[randomIndex]
+  }, [availablePlayers])
 
   // Recycling unsold players when no available players left
   useEffect(() => {
