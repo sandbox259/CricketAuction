@@ -59,17 +59,17 @@ function GroupsTab({ teams }: { teams: any[] }) {
   const groupB = teams.filter(team => groupBIds.includes(team.id))
 
   const GroupTable = ({ title, teams }: { title: string; teams: any[] }) => (
-    <Card className="shadow-sm  border-2 border-amber-500">
+    <Card className="bg-[#102238] shadow-sm border-2 border-amber-500">
       <CardContent className="p-4" >
-        <h3 className="text-base font-bold text-gray-900 mb-3">{title}</h3>
+        <h3 className="text-base font-bold text-slate-100 mb-3">{title}</h3>
         <div className="space-y-2">
           {teams.map((team, idx) => (
             <div
               key={team.id}
-              className="flex items-center justify-between p-2 rounded-lg hover:bg-gray-50 transition-colors"
+              className="flex items-center justify-between p-2 rounded-lg hover:bg-white/5 transition-colors"
             >
               <div className="flex items-center space-x-3 flex-1 min-w-0">
-                <span className="text-sm font-medium text-gray-500 w-6 flex-shrink-0">
+                <span className="text-sm font-medium text-slate-400 w-6 flex-shrink-0">
                   {idx + 1}
                 </span>
                 {team.team_logo && (
@@ -79,7 +79,7 @@ function GroupsTab({ teams }: { teams: any[] }) {
                     className="h-8 w-8 object-contain flex-shrink-0"
                   />
                 )}
-                <span className="text-sm font-medium text-gray-900 truncate border border-amber-500 px-2 py-1 rounded-md">
+                <span className="text-sm font-medium text-slate-100 truncate border border-amber-500 px-2 py-1 rounded-md">
                   {team.name}
                 </span>
               </div>
@@ -140,7 +140,7 @@ export default function ViewerDashboard({ user, initialData }: ViewerDashboardPr
               <Button
                 variant="ghost"
                 size="sm"
-                className="p-2 text-gray-600 hover:bg-gray-100 rounded-full"
+                className="p-2 text-slate-400 hover:bg-white/10 rounded-full"
               >
                 <LogOut className="h-4 w-4" />
               </Button>
@@ -170,7 +170,7 @@ export default function ViewerDashboard({ user, initialData }: ViewerDashboardPr
             </div>
             <div className="text-right">
               <p className="font-serif text-lg font-bold text-white">{currentPlayer.name}</p>
-              <p className="text-xs text-amber-600">{currentPlayer.position}</p>
+              <p className="text-xs text-amber-300">{currentPlayer.position}</p>
             </div>
           </div>
         </div>
@@ -179,26 +179,26 @@ export default function ViewerDashboard({ user, initialData }: ViewerDashboardPr
       {/* Quick Stats */}
       <div className="px-4 py-5">
         <div className="grid grid-cols-2 gap-3">
-          <Card className="border border-cyan-300/20 bg-gradient-to-br from-cyan-400/15 to-[#0d1b2d] shadow-xl shadow-cyan-950/20">
+          <Card className="border border-cyan-300/20 bg-[#102238] shadow-xl shadow-cyan-950/20">
             <CardContent className="p-3 flex items-center space-x-3">
-              <div className="p-2 rounded-full bg-blue-100">
-                <Users className="h-5 w-5 text-blue-600" />
+              <div className="p-2 rounded-full bg-cyan-300/15">
+                <Users className="h-5 w-5 text-cyan-300" />
               </div>
               <div>
-                <p className="text-xs text-gray-600">Players Sold</p>
-                <p className="text-lg font-bold text-gray-900">{auctionOverview.sold_players || 0}</p>
+                <p className="text-xs text-slate-400">Players Sold</p>
+                <p className="text-lg font-bold text-slate-100">{auctionOverview.sold_players || 0}</p>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="border border-amber-300/20 bg-gradient-to-br from-amber-400/15 to-[#0d1b2d] shadow-xl shadow-amber-950/20">
+          <Card className="border border-amber-300/20 bg-[#102238] shadow-xl shadow-amber-950/20">
             <CardContent className="p-3 flex items-center space-x-3">
               <div className="p-2 rounded-full bg-emerald-300/15">
                 <DollarSign className="h-5 w-5 text-emerald-600" />
               </div>
               <div>
-                <p className="text-xs text-gray-600">Total Spent</p>
-                <p className="text-lg font-bold text-gray-900">
+                <p className="text-xs text-slate-400">Total Spent</p>
+                <p className="text-lg font-bold text-slate-100">
                   {formatCurrency(auctionOverview.total_spent || 0)}
                 </p>
               </div>
@@ -232,7 +232,7 @@ export default function ViewerDashboard({ user, initialData }: ViewerDashboardPr
 
           {/* Sponsors Section */}
           <TabsContent value="sponsors" className="space-y-4">
-            <h2 className="text-lg font-bold text-gray-900">Our Sponsors</h2>
+            <h2 className="text-lg font-bold text-slate-100">Our Sponsors</h2>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
               {/* Replace src with actual sponsor logos */}
               <Card className="flex items-center justify-center p-4 shadow-sm">
@@ -265,19 +265,19 @@ export default function ViewerDashboard({ user, initialData }: ViewerDashboardPr
       </div>
 
       {/* Footer */}
-      <footer className="mt-auto bg-gradient-to-r from-amber-100 via-white to-amber-50 border-t border-gray-200 px-4 py-6 pb-20 sm:pb-20">
+      <footer className="mt-auto bg-[#0d1b2d] border-t border-white/10 px-4 py-6 pb-20 sm:pb-20">
         <div className="max-w-4xl mx-auto">
           <div className="flex flex-col items-center space-y-3">
             {/* Copyright Info */}
-            <div className="flex items-center space-x-2 text-sm text-gray-600">
+            <div className="flex items-center space-x-2 text-sm text-slate-400">
               <Copyright className="h-4 w-4" />
               <span>{new Date().getFullYear()} Cmsc Allumni. All rights reserved.</span>
             </div>
             
             {/* Developer Credit */}
-            <div className="flex items-center space-x-2 text-xs text-gray-500">
+            <div className="flex items-center space-x-2 text-xs text-slate-400">
               <span>Developed by</span>
-              <span className="font-medium text-amber-600">Saad Rizwan Aibani</span>
+              <span className="font-medium text-amber-300">Saad Rizwan Aibani</span>
             </div>
             
             {/* Decorative Divider */}
@@ -306,7 +306,7 @@ export default function ViewerDashboard({ user, initialData }: ViewerDashboardPr
               >
                 <Icon
                   className={`h-4 w-4 sm:h-5 sm:w-5 mb-0.5 sm:mb-1 transition-colors duration-300 ${
-                    activeTab === key ? "text-blue-600" : "text-slate-500"
+                    activeTab === key ? "text-cyan-300" : "text-slate-500"
                   }`}
                 />
                 <span className="truncate text-[10px] sm:text-xs leading-tight">

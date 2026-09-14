@@ -73,7 +73,7 @@ export default function TeamsStandingsTab({ teams }: TeamsStandingsTabProps) {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-8">
-        <div className="text-gray-500">Loading team data...</div>
+        <div className="text-slate-400">Loading team data...</div>
       </div>
     )
   }
@@ -81,17 +81,17 @@ export default function TeamsStandingsTab({ teams }: TeamsStandingsTabProps) {
   return (
     <div className="space-y-4">
       {/* Search and Filter Bar */}
-       <Card className="bg-white border-gray-200 shadow-sm">
+       <Card className="bg-[#102238] border-white/10 shadow-sm">
         <CardHeader className="pb-3">
           <div className="flex flex-col sm:flex-row gap-4">
             {/* Search */}
             <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-500" />
               <Input
                 placeholder="Search teams..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 bg-white border-gray-200"
+                className="pl-10 bg-[#102238] border-white/10"
               />
             </div>
 
@@ -99,14 +99,14 @@ export default function TeamsStandingsTab({ teams }: TeamsStandingsTabProps) {
             <div className="flex gap-2">
               {/* Team Filter */}
               <Select value={selectedTeam} onValueChange={setSelectedTeam}>
-                <SelectTrigger className="bg-white border border-gray-200 text-gray-900 text-sm h-9 rounded-md shadow-sm hover:border-gray-300 focus:ring-1 focus:ring-blue-500 focus:ring-offset-1">
-                  <Users className="h-3 w-3 mr-2 text-gray-400" />
+                <SelectTrigger className="bg-[#102238] border border-white/10 text-slate-100 text-sm h-9 rounded-md shadow-sm hover:border-gray-300 focus:ring-1 focus:ring-blue-500 focus:ring-offset-1">
+                  <Users className="h-3 w-3 mr-2 text-slate-500" />
                   <SelectValue placeholder="Filter Teams" />
                 </SelectTrigger>
-                <SelectContent className="bg-white border border-gray-200 text-gray-900">
+                <SelectContent className="bg-[#102238] border border-white/10 text-slate-100">
                   <SelectItem
                     value="all"
-                    className="text-gray-900 data-[highlighted]:bg-blue-50 data-[highlighted]:text-blue-900"
+                    className="text-slate-100 data-[highlighted]:bg-blue-50 data-[highlighted]:text-blue-900"
                   >
                     All Teams
                   </SelectItem>
@@ -114,7 +114,7 @@ export default function TeamsStandingsTab({ teams }: TeamsStandingsTabProps) {
                     <SelectItem
                       key={team.team_id}
                       value={team.team_id.toString()}
-                      className="text-gray-900 data-[highlighted]:bg-blue-50 data-[highlighted]:text-blue-900"
+                      className="text-slate-100 data-[highlighted]:bg-blue-50 data-[highlighted]:text-blue-900"
                     >
                       {team.team_name}
                     </SelectItem>
@@ -124,25 +124,25 @@ export default function TeamsStandingsTab({ teams }: TeamsStandingsTabProps) {
 
               {/* Sort Filter */}
               <Select value={sortBy} onValueChange={(val) => setSortBy(val as any)}>
-                <SelectTrigger className="bg-white border border-gray-200 text-gray-900 text-sm h-9 rounded-md shadow-sm hover:border-gray-300 focus:ring-1 focus:ring-blue-500 focus:ring-offset-1">
+                <SelectTrigger className="bg-[#102238] border border-white/10 text-slate-100 text-sm h-9 rounded-md shadow-sm hover:border-gray-300 focus:ring-1 focus:ring-blue-500 focus:ring-offset-1">
                   <SelectValue placeholder="Sort By" />
                 </SelectTrigger>
-                <SelectContent className="bg-white border border-gray-200 text-gray-900">
+                <SelectContent className="bg-[#102238] border border-white/10 text-slate-100">
                   <SelectItem
                     value="spent"
-                    className="text-gray-900 data-[highlighted]:bg-blue-50 data-[highlighted]:text-blue-900"
+                    className="text-slate-100 data-[highlighted]:bg-blue-50 data-[highlighted]:text-blue-900"
                   >
                     Spending
                   </SelectItem>
                   <SelectItem
                     value="remaining"
-                    className="text-gray-900 data-[highlighted]:bg-blue-50 data-[highlighted]:text-blue-900"
+                    className="text-slate-100 data-[highlighted]:bg-blue-50 data-[highlighted]:text-blue-900"
                   >
                     Remaining Budget
                   </SelectItem>
                   <SelectItem
                     value="squad"
-                    className="text-gray-900 data-[highlighted]:bg-blue-50 data-[highlighted]:text-blue-900"
+                    className="text-slate-100 data-[highlighted]:bg-blue-50 data-[highlighted]:text-blue-900"
                   >
                     Squad Size
                   </SelectItem>
@@ -158,7 +158,7 @@ export default function TeamsStandingsTab({ teams }: TeamsStandingsTabProps) {
         {sortedTeams.map((team, idx) => (
           <Card
             key={team.team_id}
-            className={`bg-white border-gray-200 shadow-sm transition-all hover:shadow-md hover:-translate-y-0.5 ${
+            className={`bg-[#102238] border-white/10 shadow-sm transition-all hover:shadow-md hover:-translate-y-0.5 ${
               idx === 0 ? "border-yellow-400" : ""
             }`}
           >
@@ -173,7 +173,7 @@ export default function TeamsStandingsTab({ teams }: TeamsStandingsTabProps) {
                     alt={`${team.team_name} logo`}
                     className="w-10 h-16 sm:w-12 sm:h-18 md:w-14 md:h-20 object-cover rounded border-2 border-amber-500"
                   />
-                  <CardTitle className="text-gray-900 text-base">{team.team_name}</CardTitle>
+                  <CardTitle className="text-slate-100 text-base">{team.team_name}</CardTitle>
                 </div>
                 <Badge variant="outline" className="text-xs">
                   {team.players_count || 0} players
@@ -184,8 +184,8 @@ export default function TeamsStandingsTab({ teams }: TeamsStandingsTabProps) {
               {/* Budget Progress */}
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-400">Budget Used</span>
-                  <span className="text-gray-900">
+                  <span className="text-slate-500">Budget Used</span>
+                  <span className="text-slate-100">
                     {formatCurrency(team.total_spent || 0)} / ₹1.5L
                   </span>
                 </div>
@@ -197,28 +197,28 @@ export default function TeamsStandingsTab({ teams }: TeamsStandingsTabProps) {
 
               {/* Stats Grid */}
               <div className="grid grid-cols-3 gap-3">
-                <div className="text-center p-2 bg-gray-50 rounded-lg">
+                <div className="text-center p-2 bg-white/5 rounded-lg">
                   <DollarSign className="h-4 w-4 text-green-500 mx-auto mb-1" />
-                  <p className="text-gray-900 font-medium text-sm">{formatCurrency(team.budget)}</p>
-                  <p className="text-gray-400 text-xs">Remaining</p>
+                  <p className="text-slate-100 font-medium text-sm">{formatCurrency(team.budget)}</p>
+                  <p className="text-slate-500 text-xs">Remaining</p>
                 </div>
-                <div className="text-center p-2 bg-gray-50 rounded-lg">
+                <div className="text-center p-2 bg-white/5 rounded-lg">
                   <Users className="h-4 w-4 text-blue-500 mx-auto mb-1" />
-                  <p className="text-gray-900 font-medium text-sm">{team.players_count || 0}</p>
-                  <p className="text-gray-400 text-xs">Squad Size</p>
+                  <p className="text-slate-100 font-medium text-sm">{team.players_count || 0}</p>
+                  <p className="text-slate-500 text-xs">Squad Size</p>
                 </div>
-                <div className="text-center p-2 bg-gray-50 rounded-lg">
+                <div className="text-center p-2 bg-white/5 rounded-lg">
                   <TrendingUp className="h-4 w-4 text-purple-500 mx-auto mb-1" />
-                  <p className="text-gray-900 font-medium text-sm">
+                  <p className="text-slate-100 font-medium text-sm">
                     {(((team.total_spent || 0) / totalBudget) * 100).toFixed(0)}%
                   </p>
-                  <p className="text-gray-400 text-xs">Used</p>
+                  <p className="text-slate-500 text-xs">Used</p>
                 </div>
               </div>
 
               {/* Team Leadership */}
               <div>
-                <p className="text-gray-400 text-sm mb-3">Team Leadership</p>
+                <p className="text-slate-500 text-sm mb-3">Team Leadership</p>
                 <div className="grid grid-cols-3 gap-3 mb-4">
                   {/* Owner */}
                   <div className="text-center">
@@ -230,10 +230,10 @@ export default function TeamsStandingsTab({ teams }: TeamsStandingsTabProps) {
                       alt={team.owner_name || "Team Owner"}
                       className="w-12 h-12 rounded-full object-cover border-2 border-blue-500 mx-auto mb-1"
                     />
-                    <p className="text-gray-900 text-xs font-medium">
+                    <p className="text-slate-100 text-xs font-medium">
                       {team.owner_name || "Owner"}
                     </p>
-                    <p className="text-gray-400 text-xs">Owner</p>
+                    <p className="text-slate-500 text-xs">Owner</p>
                   </div>
 
                   {/* Captain */}
@@ -246,10 +246,10 @@ export default function TeamsStandingsTab({ teams }: TeamsStandingsTabProps) {
                       alt={team.captain_name || "Team Captain"}
                       className="w-12 h-12 rounded-full object-cover border-2 border-blue-500 mx-auto mb-1"
                     />
-                    <p className="text-gray-900 text-xs font-medium">
+                    <p className="text-slate-100 text-xs font-medium">
                       {team.captain_name || "Captain"}
                     </p>
-                    <p className="text-gray-400 text-xs">Captain</p>
+                    <p className="text-slate-500 text-xs">Captain</p>
                   </div>
 
                   {/* Vice Captain */}
@@ -262,10 +262,10 @@ export default function TeamsStandingsTab({ teams }: TeamsStandingsTabProps) {
                       alt={team.vice_captain_name || "Vice Captain"}
                       className="w-12 h-12 rounded-full object-cover border-2 border-blue-500 mx-auto mb-1"
                     />
-                    <p className="text-gray-900 text-xs font-medium">
+                    <p className="text-slate-100 text-xs font-medium">
                       {team.vice_captain_name || "Vice Captain"}
                     </p>
-                    <p className="text-gray-400 text-xs">Vice Captain</p>
+                    <p className="text-slate-500 text-xs">Vice Captain</p>
                   </div>
                 </div>
               </div>
@@ -273,7 +273,7 @@ export default function TeamsStandingsTab({ teams }: TeamsStandingsTabProps) {
               {/* Recent Acquisitions */}
               {team.players && team.players.length > 0 && (
                 <div>
-                  <p className="text-gray-400 text-sm mb-2">Recent Acquisitions</p>
+                  <p className="text-slate-500 text-sm mb-2">Recent Acquisitions</p>
                   <div className="space-y-2">
                     {(expandedTeams.has(team.team_id)
                       ? team.players
@@ -281,7 +281,7 @@ export default function TeamsStandingsTab({ teams }: TeamsStandingsTabProps) {
                     ).map((player: any) => (
                       <div
                         key={player.id}
-                        className="flex items-center justify-between text-sm p-2 bg-gray-50 rounded-md hover:bg-gray-100"
+                        className="flex items-center justify-between text-sm p-2 bg-white/5 rounded-md hover:bg-white/10"
                       >
                         <div className="flex items-center space-x-2">
                           <img
@@ -290,10 +290,10 @@ export default function TeamsStandingsTab({ teams }: TeamsStandingsTabProps) {
                               "/placeholder.svg?height=32&width=32&query=cricket player portrait"
                             }
                             alt={player.name}
-                            className="w-8 h-8 rounded-md object-contain border border-gray-200"
+                            className="w-8 h-8 rounded-md object-contain border border-white/10"
                           />
                           <div>
-                            <p className="text-gray-900 font-medium">{player.name}</p>
+                            <p className="text-slate-100 font-medium">{player.name}</p>
                             <span className="px-2 py-0.5 text-xs rounded-full bg-blue-100 text-blue-700">
                               {player.position}
                             </span>
@@ -309,7 +309,7 @@ export default function TeamsStandingsTab({ teams }: TeamsStandingsTabProps) {
                         variant="ghost"
                         size="sm"
                         onClick={() => toggleExpandedPlayers(team.team_id)}
-                        className="w-full text-gray-600 hover:text-gray-800 hover:bg-gray-50"
+                        className="w-full text-gray-600 hover:text-gray-800 hover:bg-white/5"
                       >
                         {expandedTeams.has(team.team_id) ? (
                           <>

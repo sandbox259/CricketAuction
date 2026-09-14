@@ -39,19 +39,19 @@ export default function PlayersListTab({ players }: PlayersListTabProps) {
     switch (status) {
       case "sold":
         return (
-          <Badge className="bg-green-100 text-green-700 text-xs whitespace-nowrap flex-shrink-0">
+          <Badge className="bg-emerald-400/15 text-emerald-200 text-xs whitespace-nowrap flex-shrink-0">
             Sold
           </Badge>
         )
       case "unsold":
         return (
-          <Badge className="bg-red-100 text-red-700 text-xs whitespace-nowrap flex-shrink-0">
+          <Badge className="bg-red-400/15 text-red-200 text-xs whitespace-nowrap flex-shrink-0">
             Unsold
           </Badge>
         )
       default:
         return (
-          <Badge className="bg-blue-100 text-blue-700 text-xs whitespace-nowrap flex-shrink-0">
+          <Badge className="bg-cyan-400/15 text-cyan-200 text-xs whitespace-nowrap flex-shrink-0">
             Available
           </Badge>
         )
@@ -78,16 +78,16 @@ export default function PlayersListTab({ players }: PlayersListTabProps) {
   return (
     <div className="space-y-4">
       {/* Search and Filters */}
-      <Card className="bg-white border border-gray-200 rounded-xl shadow-md">
+      <Card className="bg-[#102238] border border-white/10 rounded-xl shadow-md">
   <CardContent className="p-4 space-y-3">
     {/* Search Input */}
     <div className="relative">
-      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-500" />
       <Input
         placeholder="Search players..."
         value={searchTerm}
         onChange={(e) => setSearchTerm(e.target.value)}
-        className="pl-10 bg-white border-gray-200 text-gray-900 text-sm rounded-full focus:ring-2 focus:ring-blue-500"
+        className="pl-10 bg-[#102238] border-white/10 text-slate-100 text-sm rounded-full focus:ring-2 focus:ring-blue-500"
       />
     </div>
 
@@ -96,10 +96,10 @@ export default function PlayersListTab({ players }: PlayersListTabProps) {
       {/* Status Filter */}
       <div className="min-w-0">
         <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="bg-white border border-gray-200 text-gray-900 text-xs sm:text-sm h-8 sm:h-9 rounded-md shadow-sm hover:border-gray-300 focus:ring-2 focus:ring-blue-500 w-full">
+          <SelectTrigger className="bg-[#102238] border border-white/10 text-slate-100 text-xs sm:text-sm h-8 sm:h-9 rounded-md shadow-sm hover:border-gray-300 focus:ring-2 focus:ring-blue-500 w-full">
             <SelectValue placeholder="Status" />
           </SelectTrigger>
-          <SelectContent className="bg-white border border-gray-200 text-gray-900">
+          <SelectContent className="bg-[#102238] border border-white/10 text-slate-100">
             <SelectItem value="all">All Status</SelectItem>
             <SelectItem value="available">Available</SelectItem>
             <SelectItem value="sold">Sold</SelectItem>
@@ -111,10 +111,10 @@ export default function PlayersListTab({ players }: PlayersListTabProps) {
       {/* Position Filter */}
       <div className="min-w-0">
         <Select value={positionFilter} onValueChange={setPositionFilter}>
-          <SelectTrigger className="bg-white border border-gray-200 text-gray-900 text-xs sm:text-sm h-8 sm:h-9 rounded-md shadow-sm hover:border-gray-300 focus:ring-2 focus:ring-blue-500 w-full">
+          <SelectTrigger className="bg-[#102238] border border-white/10 text-slate-100 text-xs sm:text-sm h-8 sm:h-9 rounded-md shadow-sm hover:border-gray-300 focus:ring-2 focus:ring-blue-500 w-full">
             <SelectValue placeholder="Position" />
           </SelectTrigger>
-          <SelectContent className="bg-white border border-gray-200 text-gray-900">
+          <SelectContent className="bg-[#102238] border border-white/10 text-slate-100">
             <SelectItem value="all">All Positions</SelectItem>
             {positions.map((position) => (
               <SelectItem key={position} value={position}>
@@ -128,10 +128,10 @@ export default function PlayersListTab({ players }: PlayersListTabProps) {
       {/* City Filter */}
       <div className="min-w-0">
         <Select value={cityFilter} onValueChange={setCityFilter}>
-          <SelectTrigger className="bg-white border border-gray-200 text-gray-900 text-xs sm:text-sm h-8 sm:h-9 rounded-md shadow-sm hover:border-gray-300 focus:ring-2 focus:ring-blue-500 w-full">
+          <SelectTrigger className="bg-[#102238] border border-white/10 text-slate-100 text-xs sm:text-sm h-8 sm:h-9 rounded-md shadow-sm hover:border-gray-300 focus:ring-2 focus:ring-blue-500 w-full">
             <SelectValue placeholder="City" />
           </SelectTrigger>
-          <SelectContent className="bg-white border border-gray-200 text-gray-900">
+          <SelectContent className="bg-[#102238] border border-white/10 text-slate-100">
             <SelectItem value="all">All Cities</SelectItem>
             <SelectItem value="Mumbai">Mumbai</SelectItem>
             <SelectItem value="Pune">Pune</SelectItem>
@@ -148,10 +148,10 @@ export default function PlayersListTab({ players }: PlayersListTabProps) {
 
       {/* Players Count */}
       <div className="flex items-center justify-between px-1">
-        <p className="text-gray-500 text-sm">
+        <p className="text-slate-400 text-sm">
           {filteredPlayers.length} player{filteredPlayers.length !== 1 ? "s" : ""} found
         </p>
-        <Filter className="h-4 w-4 text-gray-400" />
+        <Filter className="h-4 w-4 text-slate-500" />
       </div>
 
       {/* Players List */}
@@ -159,7 +159,7 @@ export default function PlayersListTab({ players }: PlayersListTabProps) {
         {filteredPlayers.map((player) => (
           <Card
             key={player.id}
-            className="bg-gradient-to-r from-white via-gray-50 to-white border border-gray-200 text-sm transition-all hover:shadow-md hover:-translate-y-0.5 rounded-xl"
+            className="bg-gradient-to-r from-[#14283f] via-[#102238] to-[#0d1b2d] border border-white/10 text-sm transition-all hover:shadow-md hover:-translate-y-0.5 rounded-xl"
           >
             <CardContent className="p-4">
               <div className="flex items-start justify-between mb-3">
@@ -168,14 +168,14 @@ export default function PlayersListTab({ players }: PlayersListTabProps) {
                   <img
                     src={player.image || "/placeholder.svg"}
                     alt={player.name}
-                    className="w-16 h-24 object-cover rounded-lg border border-gray-200 flex-shrink-0"
+                    className="w-16 h-24 object-cover rounded-lg border border-white/10 flex-shrink-0"
                   />
                   <div className="flex-1 min-w-0">
-                    <h3 className="text-gray-900 font-semibold">{player.name}</h3>
+                    <h3 className="text-slate-100 font-semibold">{player.name}</h3>
                     <div className="mt-1 flex flex-wrap gap-1">
                       {getPositionChip(player.position)}
                       {player.city && (
-                        <Badge className="bg-gray-100 text-gray-700 text-xs">{player.city}</Badge>
+                        <Badge className="bg-white/10 text-slate-300 text-xs">{player.city}</Badge>
                       )}
                       {player.previous_team && (
                         <Badge className="bg-purple-100 text-purple-700 text-xs whitespace-nowrap">
@@ -189,13 +189,13 @@ export default function PlayersListTab({ players }: PlayersListTabProps) {
               </div>
 
               <div className="grid grid-cols-2 gap-4 text-sm">
-                <div className="p-2 rounded-md bg-gray-50">
-                  <p className="text-gray-500 text-xs">Base Price</p>
-                  <p className="text-gray-900 font-semibold">{formatCurrency(player.base_price)}</p>
+                <div className="p-2 rounded-md bg-white/5">
+                  <p className="text-slate-400 text-xs">Base Price</p>
+                  <p className="text-slate-100 font-semibold">{formatCurrency(player.base_price)}</p>
                 </div>
-                <div className="p-2 rounded-md bg-gray-50">
-                  <p className="text-gray-500 text-xs">Final Price</p>
-                  <p className="text-gray-900 font-semibold">
+                <div className="p-2 rounded-md bg-white/5">
+                  <p className="text-slate-400 text-xs">Final Price</p>
+                  <p className="text-slate-100 font-semibold">
                     {player.current_price > 0 ? formatCurrency(player.current_price) : "-"}
                   </p>
                 </div>
@@ -206,10 +206,10 @@ export default function PlayersListTab({ players }: PlayersListTabProps) {
       </div>
 
       {filteredPlayers.length === 0 && (
-        <Card className="bg-white border border-gray-200 text-gray-400 text-sm">
+        <Card className="bg-[#102238] border border-white/10 text-slate-500 text-sm">
           <CardContent className="p-6 text-center space-y-2">
             <Users className="mx-auto h-8 w-8 text-gray-300" />
-            <p className="text-gray-500">No players found matching your criteria</p>
+            <p className="text-slate-400">No players found matching your criteria</p>
           </CardContent>
         </Card>
       )}

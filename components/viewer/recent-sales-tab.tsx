@@ -67,62 +67,62 @@ export default function RecentSalesTab({ assignments }: RecentSalesTabProps) {
     <div className="space-y-4">
       {/* 🔹 Sales Summary */}
       <div className="grid grid-cols-3 gap-3">
-        <Card className="bg-white border border-gray-200 rounded-xl shadow-sm hover:shadow-md transition">
+        <Card className="bg-[#102238] border border-white/10 rounded-xl shadow-sm hover:shadow-md transition">
           <CardContent className="p-2 sm:p-3 text-center">
             <DollarSign className="h-3 w-3 sm:h-4 sm:w-4 text-green-500 mx-auto mb-1" />
-            <p className="text-gray-900 font-bold text-xs sm:text-sm md:text-base">
+            <p className="text-slate-100 font-bold text-xs sm:text-sm md:text-base">
               {formatCurrency(totalValue)}
             </p>
-            <p className="text-gray-400 text-[10px] sm:text-xs">Total Sales</p>
+            <p className="text-slate-500 text-[10px] sm:text-xs">Total Sales</p>
           </CardContent>
         </Card>
 
-        <Card className="bg-white border border-gray-200 rounded-xl shadow-sm hover:shadow-md transition">
+        <Card className="bg-[#102238] border border-white/10 rounded-xl shadow-sm hover:shadow-md transition">
           <CardContent className="p-2 sm:p-3 text-center">
             <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4 text-blue-500 mx-auto mb-1" />
-            <p className="text-gray-900 font-bold text-xs sm:text-sm md:text-base">
+            <p className="text-slate-100 font-bold text-xs sm:text-sm md:text-base">
               {formatCurrency(averagePrice)}
             </p>
-            <p className="text-gray-400 text-[10px] sm:text-xs">Average</p>
+            <p className="text-slate-500 text-[10px] sm:text-xs">Average</p>
           </CardContent>
         </Card>
 
-        <Card className="bg-white border border-gray-200 rounded-xl shadow-sm hover:shadow-md transition">
+        <Card className="bg-[#102238] border border-white/10 rounded-xl shadow-sm hover:shadow-md transition">
           <CardContent className="p-2 sm:p-3 text-center">
             <Clock className="h-3 w-3 sm:h-4 sm:w-4 text-orange-500 mx-auto mb-1" />
-            <p className="text-gray-900 font-bold text-xs sm:text-sm md:text-base">
+            <p className="text-slate-100 font-bold text-xs sm:text-sm md:text-base">
               {formatCurrency(highestSale)}
             </p>
-            <p className="text-gray-400 text-[10px] sm:text-xs">Highest</p>
+            <p className="text-slate-500 text-[10px] sm:text-xs">Highest</p>
           </CardContent>
         </Card>
       </div>
 
       {/* 🔹 Filters */}
-      <Card className="bg-white border border-gray-200 rounded-xl shadow-sm">
+      <Card className="bg-[#102238] border border-white/10 rounded-xl shadow-sm">
         <CardContent className="p-3 sm:p-4">
           <div className="grid grid-cols-2 gap-2 sm:gap-3">
             <Select value={sortBy} onValueChange={setSortBy}>
-              <SelectTrigger className="bg-white border border-gray-200 text-gray-900 text-xs sm:text-sm h-8 sm:h-9 rounded-md shadow-sm hover:border-gray-300 focus:ring-1 focus:ring-blue-500 focus:ring-offset-1">
-                <Filter className="h-3 w-3 sm:h-4 sm:w-4 mr-1 text-gray-400" />
+              <SelectTrigger className="bg-[#102238] border border-white/10 text-slate-100 text-xs sm:text-sm h-8 sm:h-9 rounded-md shadow-sm hover:border-gray-300 focus:ring-1 focus:ring-blue-500 focus:ring-offset-1">
+                <Filter className="h-3 w-3 sm:h-4 sm:w-4 mr-1 text-slate-500" />
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent className="bg-white border border-gray-200 text-gray-90">
-                <SelectItem value="recent" className="text-gray-900">Most Recent</SelectItem>
-                <SelectItem value="price-high" className="text-gray-900">Highest Price</SelectItem>
-                <SelectItem value="price-low" className="text-gray-900">Lowest Price</SelectItem>
+              <SelectContent className="bg-[#102238] border border-white/10 text-slate-100">
+                <SelectItem value="recent" className="text-slate-100">Most Recent</SelectItem>
+                <SelectItem value="price-high" className="text-slate-100">Highest Price</SelectItem>
+                <SelectItem value="price-low" className="text-slate-100">Lowest Price</SelectItem>
               </SelectContent>
             </Select>
 
             <Select value={filterBy} onValueChange={setFilterBy}>
-              <SelectTrigger className="bg-white border border-gray-200 text-gray-900 text-xs sm:text-sm h-8 sm:h-9 rounded-md shadow-sm hover:border-gray-300 focus:ring-1 focus:ring-blue-500 focus:ring-offset-1">
-                <Filter className="h-3 w-3 sm:h-4 sm:w-4 mr-1 text-gray-400" />
+              <SelectTrigger className="bg-[#102238] border border-white/10 text-slate-100 text-xs sm:text-sm h-8 sm:h-9 rounded-md shadow-sm hover:border-gray-300 focus:ring-1 focus:ring-blue-500 focus:ring-offset-1">
+                <Filter className="h-3 w-3 sm:h-4 sm:w-4 mr-1 text-slate-500" />
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent className="bg-white border border-gray-200 text-gray-90">
-                <SelectItem value="all" className="text-gray-900">All Positions</SelectItem>
+              <SelectContent className="bg-[#102238] border border-white/10 text-slate-100">
+                <SelectItem value="all" className="text-slate-100">All Positions</SelectItem>
                 {positions.map((position) => (
-                  <SelectItem key={position} value={position} className="text-gray-900">
+                  <SelectItem key={position} value={position} className="text-slate-100">
                     {position}
                   </SelectItem>
                 ))}
@@ -133,12 +133,12 @@ export default function RecentSalesTab({ assignments }: RecentSalesTabProps) {
       </Card>
 
       {/* 🔹 Sales List */}
-      <Card className="bg-white border border-gray-200 rounded-xl shadow-sm">
+      <Card className="bg-[#102238] border border-white/10 rounded-xl shadow-sm">
         <CardHeader className="pb-2 sm:pb-3">
-          <CardTitle className="text-gray-900 text-sm sm:text-base md:text-lg">
+          <CardTitle className="text-slate-100 text-sm sm:text-base md:text-lg">
             Recent Sales ({filteredAssignments.length})
           </CardTitle>
-          <CardDescription className="text-gray-400 text-xs sm:text-sm">
+          <CardDescription className="text-slate-500 text-xs sm:text-sm">
             Latest player transactions
           </CardDescription>
         </CardHeader>
@@ -148,7 +148,7 @@ export default function RecentSalesTab({ assignments }: RecentSalesTabProps) {
               <div
                 key={assignment.id}
                 className={`p-2 sm:p-3 rounded-lg border transition hover:shadow-md hover:scale-[1.01] ${
-                  assignment.final_price === highestSale ? "border-yellow-400" : "border-gray-200"
+                  assignment.final_price === highestSale ? "border-yellow-400" : "border-white/10"
                 }`}
               >
                 <div className="flex items-start justify-between mb-2 gap-2">
@@ -157,7 +157,7 @@ export default function RecentSalesTab({ assignments }: RecentSalesTabProps) {
                       <span className="text-white text-[10px] sm:text-xs font-bold">{index + 1}</span>
                     </div>
                     <div>
-                      <p className="text-gray-900 font-medium text-xs sm:text-sm flex items-center gap-1">
+                      <p className="text-slate-100 font-medium text-xs sm:text-sm flex items-center gap-1">
                         {assignment.player?.name}
                         {assignment.final_price === highestSale && <Crown className="h-3 w-3 sm:h-4 sm:w-4 text-yellow-500" />}
                       </p>
@@ -165,7 +165,7 @@ export default function RecentSalesTab({ assignments }: RecentSalesTabProps) {
                         <Badge className={`${getPositionColor(assignment.player?.position)} text-[10px] sm:text-xs`}>
                           {assignment.player?.position}
                         </Badge>
-                        <span className="text-gray-400 text-[10px] sm:text-xs">→</span>
+                        <span className="text-slate-500 text-[10px] sm:text-xs">→</span>
                         <span className="w-4 h-4 sm:w-5 sm:h-5 rounded-full bg-blue-100 text-blue-600 text-[8px] sm:text-[10px] flex items-center justify-center">
                           {assignment.team?.name?.[0]}
                         </span>
@@ -176,10 +176,10 @@ export default function RecentSalesTab({ assignments }: RecentSalesTabProps) {
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="text-gray-900 font-bold text-xs sm:text-sm md:text-base">
+                    <p className="text-slate-100 font-bold text-xs sm:text-sm md:text-base">
                       {formatCurrency(assignment.final_price)}
                     </p>
-                    <p className="text-gray-400 text-[10px] sm:text-xs">
+                    <p className="text-slate-500 text-[10px] sm:text-xs">
                       {new Date(assignment.assigned_at).toLocaleDateString("en-GB")}
                     </p>
                   </div>
@@ -187,7 +187,7 @@ export default function RecentSalesTab({ assignments }: RecentSalesTabProps) {
 
                 {/* 🔹 Trend Indicator */}
                 <div className="flex items-center justify-between text-[10px] sm:text-xs">
-                  <span className="text-gray-400">
+                  <span className="text-slate-500">
                     Base: {formatCurrency(assignment.player?.base_price)}
                   </span>
                   <span
@@ -215,10 +215,10 @@ export default function RecentSalesTab({ assignments }: RecentSalesTabProps) {
 
       {/* 🔹 Empty State */}
       {filteredAssignments.length === 0 && (
-        <Card className="bg-white border border-gray-200 shadow-sm">
+        <Card className="bg-[#102238] border border-white/10 shadow-sm">
           <CardContent className="p-4 sm:p-6 text-center">
-            <Filter className="h-5 w-5 sm:h-6 sm:w-6 text-gray-400 mx-auto mb-2" />
-            <p className="text-gray-400 text-xs sm:text-sm">
+            <Filter className="h-5 w-5 sm:h-6 sm:w-6 text-slate-500 mx-auto mb-2" />
+            <p className="text-slate-500 text-xs sm:text-sm">
               No sales found matching your criteria
             </p>
           </CardContent>
