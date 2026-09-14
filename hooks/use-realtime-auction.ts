@@ -115,7 +115,7 @@ export function useRealtimeAuction(initialData: AuctionData) {
                     .from("players")
                     .select("id, name, image, position, achievement, base_price")
                     .eq("id", currentPlayerId)
-                  setData((prev) => ({ ...prev, currentPlayer: currentPlayerData?.[0] || null }))
+                  setData((prev) => ({ ...prev, currentPlayer: currentPlayerId ? currentPlayerData?.[0] || null : null }))
                   updateTimestamp()
                 }
               }

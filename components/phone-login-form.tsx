@@ -1,68 +1,34 @@
 "use client"
 
 import type React from "react"
-
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Loader2, Phone, Shield } from "lucide-react"
-import { useRouter } from "next/navigation"
+import { Loader2, LockKeyhole, Mail } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 
-export default function PhoneLoginForm() {
-  const router = useRouter()
-  const [step, setStep] = useState<"phone" | "otp">("phone")
-  const [phoneNumber, setPhoneNumber] = useState("")
-  const [otp, setOtp] = useState("")
+export default function PasswordLoginForm() {
+  const [email, setEmail] = useState("")
+  const [password, setPassword] = useState("")
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
-  const [success, setSuccess] = useState("")
 
-  const handleSendOtp = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setLoading(true)
-    setError("")
-    setSuccess("")
-
-    try {
-      const supabase = createClient()
-      const { error } = await supabase.auth.signInWithOtp({
-        phone: phoneNumber,
-        options: {
-          channel: "sms",
-        },
-      })
-
-      if (error) throw error
-
-      setSuccess("OTP sent successfully!")
-      setStep("otp")
-    } catch (err: any) {
-      setError(err.message || "Failed to send OTP")
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const handleVerifyOtp = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
     setLoading(true)
     setError("")
 
     try {
       const supabase = createClient()
-      const { data, error } = await supabase.auth.verifyOtp({
-        phone: phoneNumber,
-        token: otp,
-        type: "sms",
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password,
       })
 
-      if (error) throw error
-
-      // Force page refresh to ensure middleware recognizes the session
+      if (signInError) throw signInError
       window.location.href = "/"
-    } catch (err: any) {
-      setError(err.message || "Failed to verify OTP")
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unable to sign in. Check your email and password.")
     } finally {
       setLoading(false)
     }
@@ -70,98 +36,42 @@ export default function PhoneLoginForm() {
 
   return (
     <div className="w-full max-w-md space-y-8">
-      <div className="space-y-2 text-center">
-        <h1 className="text-4xl font-bold tracking-tight text-gray-900">Cricket Auction</h1>
-        <p className="text-lg text-gray-600">
-          {step === "phone" ? "Enter your phone number to continue" : "Enter the OTP sent to your phone"}
-        </p>
+      <div className="text-center">
+        <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-amber-400 text-slate-950 shadow-lg shadow-amber-400/20">
+          <LockKeyhole className="h-8 w-8" />
+        </div>
+        <p className="mb-2 text-xs font-bold uppercase tracking-[0.28em] text-amber-500">Admin pavilion</p>
+        <h1 className="font-serif text-4xl font-bold tracking-tight text-white">Cricket Auction</h1>
+        <p className="mt-2 text-sm text-slate-400">Sign in to manage the live auction room.</p>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
-        <form onSubmit={step === "phone" ? handleSendOtp : handleVerifyOtp} className="space-y-6">
-          {error && <div className="px-4 py-3 rounded-lg bg-red-50 border border-red-200 text-red-600">{error}</div>}
-
-          {success && step === "phone" && (
-            <div className="px-4 py-3 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-600">
-              {success}
+      <div className="rounded-3xl border border-white/10 bg-white/[0.07] p-8 shadow-2xl backdrop-blur-xl">
+        <form onSubmit={handleSubmit} className="space-y-5">
+          {error && <div className="rounded-xl border border-red-400/30 bg-red-400/10 px-4 py-3 text-sm text-red-200">{error}</div>}
+          <div className="space-y-2">
+            <label htmlFor="email" className="text-sm font-semibold text-slate-200">Email address</label>
+            <div className="relative">
+              <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
+              <Input id="email" type="email" autoComplete="email" placeholder="admin@example.com" value={email} onChange={(event) => setEmail(event.target.value)} required className="h-12 rounded-xl border-white/10 bg-slate-950/60 pl-10 text-white placeholder:text-slate-600" />
             </div>
-          )}
-
-          <div className="space-y-4">
-            {step === "phone" ? (
-              <div className="space-y-2">
-                <label htmlFor="phone" className="block text-sm font-semibold text-gray-900">
-                  Phone Number
-                </label>
-                <Input
-                  id="phone"
-                  type="tel"
-                  placeholder="+1234567890"
-                  value={phoneNumber}
-                  onChange={(e) => setPhoneNumber(e.target.value)}
-                  required
-                  className="h-12 text-lg rounded-lg bg-white border-gray-200 text-gray-900 focus:border-blue-600 focus:ring-blue-600"
-                />
-                <p className="text-xs text-gray-500">Include country code (e.g., +91 for India, +1 for US)</p>
-              </div>
-            ) : (
-              <>
-                <div className="space-y-2">
-                  <label htmlFor="otp" className="block text-sm font-semibold text-gray-900">
-                    Verification Code
-                  </label>
-                  <Input
-                    id="otp"
-                    type="text"
-                    placeholder="123456"
-                    value={otp}
-                    onChange={(e) => setOtp(e.target.value)}
-                    required
-                    maxLength={6}
-                    className="h-12 text-lg text-center tracking-widest rounded-lg bg-white border-gray-200 text-gray-900 focus:border-blue-600 focus:ring-blue-600"
-                  />
-                  <p className="text-xs text-gray-500">Enter the 6-digit code sent to {phoneNumber}</p>
-                </div>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  onClick={() => setStep("phone")}
-                  className="text-sm text-gray-600 hover:bg-gray-100 hover:text-gray-900"
-                >
-                  ← Change phone number
-                </Button>
-              </>
-            )}
           </div>
-
-          <Button
-            type="submit"
-            disabled={loading}
-            className="w-full py-6 text-lg font-semibold rounded-xl h-[60px] transition-all duration-200 btn-scale shadow-sm bg-blue-600 hover:bg-blue-700 text-white"
-          >
-            {loading ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                {step === "otp" ? "Verifying..." : "Sending OTP..."}
-              </>
-            ) : (
-              <>
-                {step === "otp" ? (
-                  <>
-                    <Shield className="mr-2 h-4 w-4" />
-                    Verify OTP
-                  </>
-                ) : (
-                  <>
-                    <Phone className="mr-2 h-4 w-4" />
-                    Send OTP
-                  </>
-                )}
-              </>
-            )}
+          <div className="space-y-2">
+            <label htmlFor="password" className="text-sm font-semibold text-slate-200">Password</label>
+            <div className="relative">
+              <LockKeyhole className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
+              <Input id="password" type="password" autoComplete="current-password" placeholder="Enter your password" value={password} onChange={(event) => setPassword(event.target.value)} required className="h-12 rounded-xl border-white/10 bg-slate-950/60 pl-10 text-white placeholder:text-slate-600" />
+            </div>
+          </div>
+          <Button type="submit" disabled={loading} className="h-12 w-full rounded-xl bg-amber-400 font-bold text-slate-950 hover:bg-amber-300">
+            {loading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Signing in...</> : "Enter auction room"}
           </Button>
         </form>
       </div>
     </div>
   )
 }
+
+export { PasswordLoginForm }
+
+// Keep the legacy filename import-compatible while the auth flow is password based.
+export const PhoneLoginForm = PasswordLoginForm

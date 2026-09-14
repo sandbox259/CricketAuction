@@ -117,9 +117,9 @@ export default function ViewerDashboard({ user, initialData }: ViewerDashboardPr
   ]
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="min-h-screen bg-[#07111f] text-slate-100 flex flex-col">
       {/* Header */}
-      <header className="sticky top-0 z-50 border-b bg-gradient-to-r from-amber-100 via-white to-amber-50 shadow-sm">
+      <header className="sticky top-0 z-50 border-b border-white/10 bg-[#07111f]/90 shadow-2xl shadow-black/20 backdrop-blur-xl">
   <div className="px-4 py-3">
     <div className="flex flex-col">
       {/* Top row: Logo + ConnectionStatus + Logout */}
@@ -128,7 +128,7 @@ export default function ViewerDashboard({ user, initialData }: ViewerDashboardPr
           <img
             src="/logos/logo.png"
             alt="Auction Logo"
-            className="h-8 w-auto object-contain md:h-10"
+            className="h-9 w-auto object-contain md:h-11"
           />
         </div>
 
@@ -150,7 +150,7 @@ export default function ViewerDashboard({ user, initialData }: ViewerDashboardPr
       </div>
 
       {/* Bottom row: Tournament Name */}
-      <h1 className="mt-2 text-center text-base font-bold text-gray-900 sm:text-lg md:text-xl lg:text-2xl">
+      <h1 className="mt-3 text-center font-serif text-base font-bold tracking-wide text-white sm:text-lg md:text-xl lg:text-2xl">
         CMSC Allumni Memorial Cup 2025
       </h1>
     </div>
@@ -160,16 +160,16 @@ export default function ViewerDashboard({ user, initialData }: ViewerDashboardPr
 
       {/* Live Status Banner */}
       {currentPlayer && (
-        <div className="border-b bg-white shadow-sm px-4 py-3">
+        <div className="border-b border-white/10 bg-[#0d1b2d] px-4 py-3 shadow-lg">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
               <span className="px-2 py-0.5 text-xs font-semibold bg-red-500 text-white rounded-full animate-pulse">
                 LIVE
               </span>
-              <span className="text-sm font-medium text-gray-900">Player on Auction</span>
+              <span className="text-sm font-semibold uppercase tracking-[0.18em] text-amber-300">Player on Auction</span>
             </div>
             <div className="text-right">
-              <p className="font-medium text-sm text-gray-900">{currentPlayer.name}</p>
+              <p className="font-serif text-lg font-bold text-white">{currentPlayer.name}</p>
               <p className="text-xs text-amber-600">{currentPlayer.position}</p>
             </div>
           </div>
@@ -177,9 +177,9 @@ export default function ViewerDashboard({ user, initialData }: ViewerDashboardPr
       )}
 
       {/* Quick Stats */}
-      <div className="px-4 py-4">
+      <div className="px-4 py-5">
         <div className="grid grid-cols-2 gap-3">
-          <Card className="bg-gradient-to-br from-blue-50 to-white border border-blue-100 shadow-sm">
+          <Card className="border border-cyan-300/20 bg-gradient-to-br from-cyan-400/15 to-[#0d1b2d] shadow-xl shadow-cyan-950/20">
             <CardContent className="p-3 flex items-center space-x-3">
               <div className="p-2 rounded-full bg-blue-100">
                 <Users className="h-5 w-5 text-blue-600" />
@@ -191,9 +191,9 @@ export default function ViewerDashboard({ user, initialData }: ViewerDashboardPr
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-emerald-50 to-white border border-emerald-100 shadow-sm">
+          <Card className="border border-amber-300/20 bg-gradient-to-br from-amber-400/15 to-[#0d1b2d] shadow-xl shadow-amber-950/20">
             <CardContent className="p-3 flex items-center space-x-3">
-              <div className="p-2 rounded-full bg-emerald-100">
+              <div className="p-2 rounded-full bg-emerald-300/15">
                 <DollarSign className="h-5 w-5 text-emerald-600" />
               </div>
               <div>
@@ -292,7 +292,7 @@ export default function ViewerDashboard({ user, initialData }: ViewerDashboardPr
       {/* Floating Bottom Navigation - Fixed for Mobile */}
       <nav className="fixed bottom-0 left-0 right-0 z-50 px-2 pb-2 sm:bottom-4 sm:left-1/2 sm:right-auto sm:transform sm:-translate-x-1/2 sm:px-0 sm:pb-0">
         <div className="flex items-center justify-center w-full sm:w-auto">
-          <div className="flex items-center justify-between bg-white/95 backdrop-blur-md rounded-2xl shadow-lg border border-gray-200/50 p-1 w-full max-w-sm sm:max-w-none">
+          <div className="flex items-center justify-between rounded-2xl border border-white/10 bg-[#102238]/95 p-1 shadow-2xl backdrop-blur-md w-full max-w-sm sm:max-w-none">
             {tabs.map(({ key, label, Icon }) => (
               <button
                 key={key}
@@ -300,13 +300,13 @@ export default function ViewerDashboard({ user, initialData }: ViewerDashboardPr
                 onClick={() => setActiveTab(key)}
                 className={`flex flex-col items-center justify-center min-w-0 flex-1 sm:flex-none text-xs px-2 py-2 sm:px-3 rounded-xl transition-all duration-300 focus:outline-none focus:ring-0 ${
                   activeTab === key 
-                    ? "bg-blue-100 text-blue-600 shadow-sm" 
-                    : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"
+                    ? "bg-cyan-300/15 text-cyan-200 shadow-sm" 
+                    : "text-slate-400 hover:text-white hover:bg-white/10"
                 }`}
               >
                 <Icon
                   className={`h-4 w-4 sm:h-5 sm:w-5 mb-0.5 sm:mb-1 transition-colors duration-300 ${
-                    activeTab === key ? "text-blue-600" : "text-gray-400"
+                    activeTab === key ? "text-blue-600" : "text-slate-500"
                   }`}
                 />
                 <span className="truncate text-[10px] sm:text-xs leading-tight">

@@ -8,7 +8,7 @@ export default async function ViewerPage() {
   const supabase = createClient()
 
   // Fetch initial data for viewer dashboard
-  const [{ data: teams }, { data: players }, { data: assignments }, { data: auctionOverview }] = await Promise.all([
+  const [{ data: teams }, { data: players }, { data: assignments }, { data: auctionOverview }, { data: auctionState }] = await Promise.all([
     supabase.from("teams").select("*").order("name"),
     supabase.from("players").select("*").order("name"),
     supabase
@@ -20,7 +20,12 @@ export default async function ViewerPage() {
     `)
       .order("assigned_at", { ascending: false }),
     supabase.rpc("get_auction_overview"),
+    supabase.from("auction_state").select("current_player_id").limit(1).maybeSingle(),
   ])
+
+  const currentPlayer = auctionState?.current_player_id
+    ? players?.find((player) => player.id === auctionState.current_player_id) || null
+    : null
 
   return (
     <ViewerDashboard
@@ -30,6 +35,7 @@ export default async function ViewerPage() {
         players: players || [],
         assignments: assignments || [],
         auctionOverview: auctionOverview || {},
+        currentPlayer,
       }}
     />
   )

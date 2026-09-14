@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
-import PhoneLoginForm from "@/components/phone-login-form"
+import PasswordLoginForm from "@/components/phone-login-form"
 
 export default async function LoginPage() {
   // Check if user is already logged in
@@ -16,7 +16,7 @@ export default async function LoginPage() {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4 py-12 sm:px-6 lg:px-8">
-      <PhoneLoginForm />
+      <PasswordLoginForm />
     </div>
   )
 }
