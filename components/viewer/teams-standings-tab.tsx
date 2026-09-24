@@ -165,14 +165,42 @@ export default function TeamsStandingsTab({ teams }: TeamsStandingsTabProps) {
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3">
-                  <img
+                  {/* <img
                     src={
                       team.team_logo ||
                       "/placeholder.svg?height=60&width=40&query=cricket team logo"
                     }
                     alt={`${team.team_name} logo`}
-                    className="w-10 h-16 sm:w-12 sm:h-18 md:w-14 md:h-20 object-cover rounded border-2 border-amber-500"
-                  />
+                    //className="w-10 h-16 sm:w-12 sm:h-18 md:w-14 md:h-20 object-cover rounded border-2 border-amber-500"
+                    className="block w-auto h-auto max-w-full max-h-full object-contain"
+                  /> */}
+                  <div
+                    className="
+                      w-16 h-16
+                      sm:w-20 sm:h-20
+                      md:w-24 md:h-24
+                      flex
+                      items-center
+                      justify-center
+                      flex-shrink-0
+                    "
+                  >
+                    <img
+                      src={
+                        team.team_logo ||
+                        "/placeholder.svg?height=60&width=60&query=cricket team logo"
+                      }
+                      alt={`${team.team_name} logo`}
+                      className="
+                        block
+                        w-auto
+                        h-auto
+                        max-w-full
+                        max-h-full
+                        object-contain
+                      "
+                    />
+                  </div>
                   <CardTitle className="text-gray-900 text-base">{team.team_name}</CardTitle>
                 </div>
                 <Badge variant="outline" className="text-xs">
@@ -186,7 +214,7 @@ export default function TeamsStandingsTab({ teams }: TeamsStandingsTabProps) {
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-400">Budget Used</span>
                   <span className="text-gray-900">
-                    {formatCurrency(team.total_spent || 0)} / ₹1.5L
+                    {formatCurrency(team.total_spent || 0)} / ₹2L
                   </span>
                 </div>
                 <Progress
