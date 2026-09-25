@@ -21,15 +21,37 @@ interface AuctionData {
   } | null
 }
 
-interface PostgresChangePayload<T> {
-  old: T | null
-  new: T | null
-  schema: string
-  table: string
-  commit_timestamp: string
-  eventType: string
+type PlayerRow = {
+  id: number
+  name: string
+  status?: string
+  image?: string
+  position?: string
+  achievement?: string
+  base_price?: number
+  previous_team?: string
+  city?: string
+  [key: string]: any
 }
 
+type TeamRow = {
+  id: number
+  name: string
+  budget?: number
+  team_logo?: string
+  is_pune?: boolean
+  [key: string]: any
+}
+
+type AuctionStateRow = {
+  current_player_id: number | null
+}
+
+type RealtimePayload<T> = {
+  eventType: "INSERT" | "UPDATE" | "DELETE" | string
+  new: T | null
+  old: T | null
+}
 
 export function useRealtimeAuction(initialData: AuctionData) {
   const [data, setData] = useState<AuctionData>(initialData)
@@ -37,7 +59,7 @@ export function useRealtimeAuction(initialData: AuctionData) {
   const [lastUpdate, setLastUpdate] = useState<string | null>(null)
 
   useEffect(() => {
-    let channels: RealtimeChannel[] = []
+    const channels: RealtimeChannel[] = []
 
     const updateTimestamp = () => {
       setLastUpdate(
@@ -46,113 +68,388 @@ export function useRealtimeAuction(initialData: AuctionData) {
           hour: "2-digit",
           minute: "2-digit",
           second: "2-digit",
-        })
+        }),
       )
     }
 
-    const setupRealtimeSubscriptions = async () => {
-      try {
-        // Players
-        const playersChannel = supabase
-          .channel("players-changes")
-          .on(
-            "postgres_changes",
-            { event: "*", schema: "public", table: "players" },
-            async () => {
-              const { data: players } = await supabase.from("players").select("*").order("name")
-              if (players) {
-                setData((prev) => ({ ...prev, players }))
-                updateTimestamp()
-              }
+    /*
+     * =========================================================
+     * PLAYERS REALTIME
+     * =========================================================
+     *
+     * We use the realtime payload directly.
+     * We do NOT refetch the entire players table every time.
+     */
+    const playersChannel = supabase
+      .channel("players-changes")
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "players",
+        },
+        (payload: RealtimePayload<PlayerRow>) => {
+          const newPlayer = payload.new
+          const oldPlayer = payload.old
+
+          setData((prev) => {
+            let updatedPlayers = [...prev.players]
+
+            // INSERT
+            if (payload.eventType === "INSERT" && newPlayer) {
+              updatedPlayers.push(newPlayer)
             }
-          )
-          .subscribe()
 
-        // Assignments
-        const assignmentsChannel = supabase
-          .channel("assignments-changes")
-          .on(
-            "postgres_changes",
-            { event: "*", schema: "public", table: "assignments" },
-            async () => {
-              const { data: assignments } = await supabase
-                .from("assignments")
-                .select(`*, player:players(*), team:teams(*)`)
-                .order("assigned_at", { ascending: false })
-
-              if (assignments) {
-                setData((prev) => ({ ...prev, assignments }))
-                updateTimestamp()
-              }
+            // UPDATE
+            if (payload.eventType === "UPDATE" && newPlayer) {
+              updatedPlayers = updatedPlayers.map((player) =>
+                player.id === newPlayer.id
+                  ? {
+                      ...player,
+                      ...newPlayer,
+                    }
+                  : player,
+              )
             }
-          )
-          .subscribe()
 
-        // Teams
-        const teamsChannel = supabase
-          .channel("teams-changes")
-          .on(
-            "postgres_changes",
-            { event: "*", schema: "public", table: "teams" },
-            async () => {
-              const { data: teams } = await supabase.from("teams").select("*").order("name")
-              if (teams) {
-                setData((prev) => ({ ...prev, teams }))
-                updateTimestamp()
-              }
+            // DELETE
+            if (payload.eventType === "DELETE" && oldPlayer) {
+              updatedPlayers = updatedPlayers.filter(
+                (player) => player.id !== oldPlayer.id,
+              )
             }
-          )
-          .subscribe()
 
-        const auctionStateChannel = supabase
-            .channel("auction-state")
-            .on(
-              "postgres_changes",
-              { event: "*", schema: "public", table: "auction_state" },
-              async (payload: PostgresChangePayload<{ current_player_id: number | null }>) => {
-                const newState = payload.new
-                if (newState) {
-                  const currentPlayerId = newState.current_player_id
-                  const { data: currentPlayerData } = await supabase
-                    .from("players")
-                    .select("id, name, image, position, achievement, base_price, previous_team, city")
-                    .eq("id", currentPlayerId)
-                  setData((prev) => ({ ...prev, currentPlayer: currentPlayerData?.[0] || null }))
-                  updateTimestamp()
-                }
-              }
+            // Keep players sorted by name
+            updatedPlayers.sort((a, b) =>
+              String(a.name || "").localeCompare(
+                String(b.name || ""),
+              ),
             )
-            .subscribe()
 
-
-        // Auction Overview
-        const overviewChannel = supabase
-          .channel("auction-overview")
-          .on(
-            "postgres_changes",
-            { event: "*", schema: "public", table: "assignments" },
-            async () => {
-              const { data: auctionOverview } = await supabase.rpc("get_auction_overview")
-              if (auctionOverview) {
-                setData((prev) => ({ ...prev, auctionOverview }))
-                updateTimestamp()
-              }
+            return {
+              ...prev,
+              players: updatedPlayers,
             }
-          )
-          .subscribe()
+          })
 
-        channels = [playersChannel, assignmentsChannel, teamsChannel, overviewChannel, auctionStateChannel]
-        setIsConnected(true)
-      } catch (error) {
-        console.error("Error setting up realtime subscriptions:", error)
-        setIsConnected(false)
-      }
-    }
+          updateTimestamp()
+        },
+      )
+      .subscribe((status: string) => {
+        console.log("Players realtime status:", status)
+      })
 
-    setupRealtimeSubscriptions()
+    channels.push(playersChannel)
 
+    /*
+     * =========================================================
+     * ASSIGNMENTS REALTIME
+     * =========================================================
+     *
+     * We refetch assignments because the UI needs the latest
+     * assignment list for player counts and assignment details.
+     */
+    const assignmentsChannel = supabase
+      .channel("assignments-changes")
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "assignments",
+        },
+        async (_payload: RealtimePayload<any>) => {
+          try {
+            const {
+              data: assignments,
+              error,
+            } = await supabase
+              .from("assignments")
+              .select(`
+                id,
+                player_id,
+                team_id,
+                final_price,
+                assigned_at,
+                player:players(
+                  id,
+                  name,
+                  position,
+                  image,
+                  city,
+                  previous_team,
+                  base_price
+                ),
+                team:teams(
+                  id,
+                  name,
+                  team_logo
+                )
+              `)
+              .order("assigned_at", {
+                ascending: false,
+              })
+
+            if (error) {
+              console.error(
+                "Failed to refresh assignments:",
+                error,
+              )
+              return
+            }
+
+            setData((prev) => ({
+              ...prev,
+              assignments: assignments || [],
+            }))
+
+            updateTimestamp()
+          } catch (error) {
+            console.error(
+              "Assignment realtime refresh error:",
+              error,
+            )
+          }
+        },
+      )
+      .subscribe((status: string) => {
+        console.log("Assignments realtime status:", status)
+      })
+
+    channels.push(assignmentsChannel)
+
+    /*
+     * =========================================================
+     * TEAMS REALTIME
+     * =========================================================
+     *
+     * Teams are refetched because the database is the source
+     * of truth for budgets.
+     */
+    const teamsChannel = supabase
+      .channel("teams-changes")
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "teams",
+        },
+        async (_payload: RealtimePayload<TeamRow>) => {
+          try {
+            const {
+              data: teams,
+              error,
+            } = await supabase
+              .from("teams")
+              .select(`
+                id,
+                name,
+                budget,
+                team_logo,
+                is_pune
+              `)
+              .order("name")
+
+            if (error) {
+              console.error(
+                "Failed to refresh teams:",
+                error,
+              )
+              return
+            }
+
+            setData((prev) => ({
+              ...prev,
+              teams: (teams || []) as TeamRow[],
+            }))
+
+            updateTimestamp()
+          } catch (error) {
+            console.error(
+              "Teams realtime refresh error:",
+              error,
+            )
+          }
+        },
+      )
+      .subscribe((status: string) => {
+        console.log("Teams realtime status:", status)
+      })
+
+    channels.push(teamsChannel)
+
+    /*
+     * =========================================================
+     * AUCTION STATE REALTIME
+     * =========================================================
+     *
+     * current_player_id can legitimately be NULL.
+     *
+     * When it is NULL, clear currentPlayer and DO NOT query
+     * the players table with .eq("id", null).
+     */
+    const auctionStateChannel = supabase
+      .channel("auction-state")
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "auction_state",
+        },
+        async (
+          payload: RealtimePayload<AuctionStateRow>,
+        ) => {
+          try {
+            const newState = payload.new
+
+            /*
+             * No current player.
+             */
+            if (
+              !newState ||
+              newState.current_player_id == null
+            ) {
+              setData((prev) => ({
+                ...prev,
+                currentPlayer: null,
+              }))
+
+              updateTimestamp()
+              return
+            }
+
+            const currentPlayerId =
+              newState.current_player_id
+
+            /*
+             * Only query players when we have a valid ID.
+             */
+            const {
+              data: currentPlayerData,
+              error,
+            } = await supabase
+              .from("players")
+              .select(`
+                id,
+                name,
+                image,
+                position,
+                achievement,
+                base_price,
+                previous_team,
+                city
+              `)
+              .eq("id", currentPlayerId)
+              .maybeSingle()
+
+            if (error) {
+              console.error(
+                "Failed to fetch current player:",
+                error,
+              )
+              return
+            }
+
+            setData((prev) => ({
+              ...prev,
+              currentPlayer:
+                currentPlayerData || null,
+            }))
+
+            updateTimestamp()
+          } catch (error) {
+            console.error(
+              "Auction state realtime error:",
+              error,
+            )
+          }
+        },
+      )
+      .subscribe((status: string) => {
+        console.log(
+          "Auction state realtime status:",
+          status,
+        )
+      })
+
+    channels.push(auctionStateChannel)
+
+    /*
+     * =========================================================
+     * AUCTION OVERVIEW REALTIME
+     * =========================================================
+     */
+    const overviewChannel = supabase
+      .channel("auction-overview")
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "assignments",
+        },
+        async (_payload: RealtimePayload<any>) => {
+          try {
+            const {
+              data: auctionOverview,
+              error,
+            } = await supabase.rpc(
+              "get_auction_overview",
+            )
+
+            if (error) {
+              console.error(
+                "Failed to refresh auction overview:",
+                error,
+              )
+              return
+            }
+
+            if (auctionOverview) {
+              setData((prev) => ({
+                ...prev,
+                auctionOverview,
+              }))
+
+              updateTimestamp()
+            }
+          } catch (error) {
+            console.error(
+              "Auction overview realtime error:",
+              error,
+            )
+          }
+        },
+      )
+      .subscribe((status: string) => {
+        console.log(
+          "Auction overview realtime status:",
+          status,
+        )
+      })
+
+    channels.push(overviewChannel)
+
+    /*
+     * =========================================================
+     * CONNECTION
+     * =========================================================
+     */
+    setIsConnected(true)
+
+    /*
+     * =========================================================
+     * CLEANUP
+     * =========================================================
+     */
     return () => {
-      channels.forEach((channel) => supabase.removeChannel(channel))
+      channels.forEach((channel) => {
+        void supabase.removeChannel(channel)
+      })
+
       setIsConnected(false)
     }
   }, [])

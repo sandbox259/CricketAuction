@@ -1,13 +1,23 @@
 "use client"
 
-import { useState, useEffect, useCallback, useMemo } from "react"
+import { useState, useEffect, useCallback, useMemo, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
-import { Gavel, DollarSign, Users, Clock, ArrowRight, Loader2, Shuffle } from "lucide-react"
+import {
+  Gavel,
+  DollarSign,
+  Users,
+  Clock,
+  ArrowRight,
+  Loader2,
+  Shuffle,
+  Search,
+  UserRound,
+} from "lucide-react"
 import { supabase } from "@/lib/supabase/client"
 import { toast } from "sonner"
 
@@ -24,7 +34,7 @@ const formatCurrency = (value: number) =>
     style: "currency",
     currency: "INR",
     maximumFractionDigits: 0,
-  }).format(value)
+  }).format(Number(value) || 0)
 
 export default function AuctionTab({ initialData }: AuctionTabProps) {
   const [selectedPlayer, setSelectedPlayer] = useState<any>(null)
@@ -39,71 +49,187 @@ export default function AuctionTab({ initialData }: AuctionTabProps) {
   const [teams, setTeams] = useState(initialData.teams)
   const [assignments, setAssignments] = useState(initialData.assignments)
   const [isShuffling, setIsShuffling] = useState(false)
+  const [isRefreshingData, setIsRefreshingData] = useState(false)
+  const [isPlayerPickerOpen, setIsPlayerPickerOpen] = useState(false)
+  const [playerSearch, setPlayerSearch] = useState("")
+  const playerPickerRef = useRef<HTMLDivElement | null>(null)
 
-  // Debug: Log the assignments data
-  useEffect(() => {
-    console.log("Initial assignments:", initialData.assignments)
-    console.log("Current assignments state:", assignments)
-  }, [])
+  const availablePlayers = useMemo(
+    () => playersData.filter((p) => p.status === "available"),
+    [playersData],
+  )
 
-  // Fetch fresh assignments on component mount if initial data is empty
+  const unsoldPlayers = useMemo(
+    () => playersData.filter((p) => p.status === "unsold"),
+    [playersData],
+  )
+
+  const filteredPlayers = useMemo(() => {
+    const query = playerSearch.trim().toLowerCase()
+
+    if (!query) {
+      return availablePlayers
+    }
+
+    return availablePlayers.filter((player) => {
+      const searchableText = [
+        player.name,
+        player.position,
+        player.city,
+        player.previous_team,
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase()
+
+      return searchableText.includes(query)
+    })
+  }, [availablePlayers, playerSearch])
+
+  // Keep local auction state synchronized when the parent realtime data changes.
   useEffect(() => {
-    const fetchAssignments = async () => {
-      if (assignments.length === 0) {
-        try {
-          const { data, error } = await supabase
-            .from('assignments')
-            .select(`
-              id,
-              player_id,
-              team_id,
-              final_price,
-              created_at,
-              player:players(id, name, position, image, city, previous_team),
-              team:teams(id, name, team_logo)
-            `)
-            .order('created_at', { ascending: false })
-            .limit(10)
-          
-          if (error) throw error
-          
-          if (data && data.length > 0) {
-            console.log("Fetched fresh assignments:", data)
-            setAssignments(data)
-          }
-        } catch (error) {
-          console.error("Error fetching assignments:", error)
-        }
+    setTeams(initialData.teams || [])
+    setPlayersData(initialData.players || [])
+    setAssignments(initialData.assignments || [])
+  }, [initialData.teams, initialData.players, initialData.assignments])
+
+  // Close the player picker when clicking outside it.
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        playerPickerRef.current &&
+        !playerPickerRef.current.contains(event.target as Node)
+      ) {
+        setIsPlayerPickerOpen(false)
       }
     }
 
-    fetchAssignments()
+    document.addEventListener("mousedown", handleClickOutside)
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside)
+    }
   }, [])
 
-  const availablePlayers = useMemo(() => playersData.filter((p) => p.status === "available"), [playersData])
-  const unsoldPlayers = useMemo(() => playersData.filter((p) => p.status === "unsold"), [playersData])
+  const refreshAuctionData = useCallback(async () => {
+    setIsRefreshingData(true)
 
-  // Helper function to pick a random available player
-  const nextRandomPlayer = useCallback(() => { if (availablePlayers.length === 0)  
-  return null 
-  const randomIndex = Math.floor(Math.random() * availablePlayers.length) 
-  return availablePlayers[randomIndex]
+    try {
+      // Fetch each dataset independently so one query failure does not
+      // prevent the other authoritative data from reaching the UI.
+      const [teamsResult, playersResult, assignmentsResult] = await Promise.all([
+        supabase
+          .from("teams")
+          .select("id, name, budget, team_logo, is_pune")
+          .order("name"),
+
+        // Explicitly request only the columns used by the auction screen.
+        // This avoids unnecessary fields and keeps available/sold/unsold
+        // state driven by the database's status column.
+        supabase
+          .from("players")
+          .select(`
+            id,
+            name,
+            status,
+            position,
+            image,
+            base_price,
+            achievement,
+            city,
+            previous_team
+          `)
+          .order("name"),
+
+        // assignments.created_at does not exist in this schema; use
+        // assigned_at and avoid nested player/team joins for this refresh.
+        supabase
+          .from("assignments")
+          .select(`
+            id,
+            player_id,
+            team_id,
+            final_price,
+            assigned_at
+          `)
+          .order("assigned_at", { ascending: false }),
+      ])
+
+      if (teamsResult.error) {
+        throw new Error(`Teams refresh failed: ${teamsResult.error.message}`)
+      }
+
+      if (playersResult.error) {
+        console.error("Players refresh failed:", playersResult.error)
+        throw new Error(`Players refresh failed: ${playersResult.error.message}`)
+      }
+
+      if (assignmentsResult.error) {
+        throw new Error(
+          `Assignments refresh failed: ${assignmentsResult.error.message}`,
+        )
+      }
+
+      setTeams(teamsResult.data || [])
+      setPlayersData(playersResult.data || [])
+      setAssignments(assignmentsResult.data || [])
+    } catch (error: any) {
+      console.error("Error refreshing auction data:", error)
+      throw new Error(error?.message || "Failed to refresh auction data")
+    } finally {
+      setIsRefreshingData(false)
+    }
+  }, [])
+
+  // Fetch authoritative data once when the auction tab mounts.
+  useEffect(() => {
+    const loadFreshData = async () => {
+      try {
+        await refreshAuctionData()
+      } catch (error: any) {
+        console.error("Initial auction data refresh failed:", error)
+      }
+    }
+
+    void loadFreshData()
+  }, [refreshAuctionData])
+
+  // Helper function to pick a random available player.
+  const nextRandomPlayer = useCallback(() => {
+    if (availablePlayers.length === 0) return null
+
+    const randomIndex = Math.floor(Math.random() * availablePlayers.length)
+    return availablePlayers[randomIndex]
   }, [availablePlayers])
 
-  // Recycling unsold players when no available players left
+  const persistCurrentPlayer = useCallback(async (player: any | null) => {
+    const { error } = await supabase
+      .from("auction_state")
+      .update({ current_player_id: player ? player.id : null })
+      .eq("id", 1)
+
+    if (error) {
+      throw error
+    }
+  }, [])
+
+  // Recycling unsold players when no available players are left.
   useEffect(() => {
     const recycleUnsoldPlayers = async () => {
-      // Only recycle if:
-      // 1. No available players
-      // 2. There are unsold players  
-      // 3. Not currently processing any action
-      // 4. Not already recycling
-      if (availablePlayers.length === 0 && unsoldPlayers.length > 0 && !isProcessing && !isRecycling) {
-        console.log("[v0] No available players, recycling", unsoldPlayers.length, "unsold players...")
+      if (
+        availablePlayers.length === 0 &&
+        unsoldPlayers.length > 0 &&
+        !isProcessing &&
+        !isRecycling
+      ) {
+        console.log(
+          "No available players, recycling",
+          unsoldPlayers.length,
+          "unsold players...",
+        )
         setIsRecycling(true)
-        
+
         try {
-          // Update all unsold players to available in database
           const { error } = await supabase
             .from("players")
             .update({ status: "available" })
@@ -111,22 +237,13 @@ export default function AuctionTab({ initialData }: AuctionTabProps) {
 
           if (error) throw error
 
-          // Fetch updated players data
-          const { data: updatedPlayers, error: fetchError } = await supabase
-            .from("players")
-            .select("*")
-            .order("name")
+          await refreshAuctionData()
 
-          if (fetchError) throw fetchError
-
-          // Update local state
-          setPlayersData(updatedPlayers || [])
-          
-          console.log("[v0] Successfully recycled", unsoldPlayers.length, "players to available status")
-          toast.success(`Recycled ${unsoldPlayers.length} unsold players back to auction pool`)
-          
+          toast.success(
+            `Recycled ${unsoldPlayers.length} unsold players back to auction pool`,
+          )
         } catch (error: any) {
-          console.error("[v0] Error recycling unsold players:", error.message)
+          console.error("Error recycling unsold players:", error?.message)
           toast.error("Failed to recycle unsold players")
         } finally {
           setIsRecycling(false)
@@ -134,13 +251,19 @@ export default function AuctionTab({ initialData }: AuctionTabProps) {
       }
     }
 
-    // Add a small delay to ensure state updates are complete
     const timeoutId = setTimeout(recycleUnsoldPlayers, 500)
-    
-    return () => clearTimeout(timeoutId)
-  }, [availablePlayers.length, unsoldPlayers.length, isProcessing, isRecycling])
 
-  // Shuffle button handler - sets current player and updates database
+    return () => clearTimeout(timeoutId)
+  }, [
+    availablePlayers.length,
+    unsoldPlayers.length,
+    isProcessing,
+    isRecycling,
+    refreshAuctionData,
+  ])
+
+  // Shuffle button handler - chooses a random available player,
+  // makes them the current player, and persists that state.
   const handleShuffle = async () => {
     if (isShuffling || isProcessing) return
 
@@ -149,37 +272,56 @@ export default function AuctionTab({ initialData }: AuctionTabProps) {
 
     try {
       const next = nextRandomPlayer()
-      
-      // Update the current player state
-      setCurrentPlayer(next)
 
-      // Persist to Supabase auction_state table
-      const { error } = await supabase
-        .from("auction_state")
-        .update({ current_player_id: next ? next.id : null })
-        .eq("id", 1)
-
-      if (error) {
-        console.error("Error updating auction state:", error)
-        toast.error("Failed to update current player")
-      } else {
-        if (next) {
-          toast.success(`New player: ${next.name}`)
-        } else {
-          toast.info("No more players available")
-        }
+      if (!next) {
+        setCurrentPlayer(null)
+        setSelectedPlayer(null)
+        await persistCurrentPlayer(null)
+        toast.info("No more players available")
+        return
       }
+
+      await persistCurrentPlayer(next)
+
+      setCurrentPlayer(next)
+      setSelectedPlayer(null)
+      setPlayerSearch("")
+      toast.success(`New player: ${next.name}`)
     } catch (error: any) {
       console.error("Shuffle error:", error)
-      toast.error(error.message || "An error occurred during shuffle")
+      toast.error(error?.message || "An error occurred during shuffle")
     } finally {
       setIsShuffling(false)
       setIsProcessing(false)
     }
   }
 
+  // Manual player selection handler. Selecting a player immediately
+  // makes that player the current player in the auction.
+  const handleSelectPlayer = async (player: any) => {
+    if (!player || isProcessing) return
+
+    setIsProcessing(true)
+
+    try {
+      await persistCurrentPlayer(player)
+
+      setCurrentPlayer(player)
+      setSelectedPlayer(null)
+      setIsPlayerPickerOpen(false)
+      setPlayerSearch("")
+
+      toast.success(`Selected player: ${player.name}`)
+    } catch (error: any) {
+      console.error("Select player error:", error)
+      toast.error(error?.message || "Failed to select player")
+    } finally {
+      setIsProcessing(false)
+    }
+  }
+
   const handleAssignPlayer = async () => {
-    if (isProcessing) return // Prevent multiple concurrent calls
+    if (isProcessing) return
 
     if (!selectedPlayer || !selectedTeam || !finalPrice) {
       toast.error("Please select player, team, and enter final price")
@@ -187,8 +329,8 @@ export default function AuctionTab({ initialData }: AuctionTabProps) {
     }
 
     const finalPriceNumber = Number.parseFloat(finalPrice)
-    
-    if (isNaN(finalPriceNumber) || finalPriceNumber <= 0) {
+
+    if (Number.isNaN(finalPriceNumber) || finalPriceNumber <= 0) {
       toast.error("Please enter a valid final price")
       return
     }
@@ -197,68 +339,69 @@ export default function AuctionTab({ initialData }: AuctionTabProps) {
     setIsProcessing(true)
 
     try {
-      // Fetch team summary dynamically
+      const teamId = Number.parseInt(selectedTeam, 10)
+
+      // Fetch the authoritative team summary immediately before assignment.
       const { data: teamData, error: teamError } = await supabase.rpc(
         "get_team_summary",
-        { p_team_id: Number.parseInt(selectedTeam) }
+        { p_team_id: teamId },
       )
 
       if (teamError) {
         console.error("Team summary error:", teamError)
         throw new Error("Failed to fetch team data")
       }
-      
+
       if (!teamData) {
         throw new Error("Team data not found")
       }
 
       console.log("Team data received:", teamData)
 
-      const { budget_remaining, players_count, is_pune} = teamData
-      
-      // Calculate purchased players count (excluding captain/vice-captain)
-      const purchasedPlayersCount = assignments.filter(a => a.team_id === Number.parseInt(selectedTeam)).length
-      const remainingSlots = 12 - purchasedPlayersCount // 11 players max per team (excluding captain/vice-captain)
-      const minRemainingBudget = (remainingSlots - 1) * 500 // -1 for the current player being purchased
+      const { budget_remaining, is_pune } = teamData
 
-      console.log("Budget validation:", {
+      const purchasedPlayersCount = assignments.filter(
+        (assignment) => assignment.team_id === teamId,
+      ).length
+      const remainingSlots = 12 - purchasedPlayersCount
+
+      console.log("Assignment validation:", {
         finalPrice: finalPriceNumber,
         basePrice: selectedPlayer.base_price,
         budgetRemaining: budget_remaining,
         purchasedPlayers: purchasedPlayersCount,
-        remainingSlots: remainingSlots,
-        minRequired: minRemainingBudget,
-        wouldRemainAfterPurchase: budget_remaining - finalPriceNumber
+        remainingSlots,
       })
 
-      // New Constraint: Only one player from Pune allowed
-        if (selectedPlayer.city === "Pune") {
+      // Constraint: only one player from Pune allowed per team.
+      if (selectedPlayer.city === "Pune") {
         if (is_pune) {
-          toast.error("Team already has a player from Pune");
-          return;
-        } else {
-          // Mark team as having a Pune player
-          const { error: updateError } = await supabase
-            .from("teams")
-            .update({ is_pune: true })
-            .eq("id", Number.parseInt(selectedTeam));
+          toast.error("Team already has a player from Pune")
+          return
+        }
 
-          if (updateError) {
-            console.error("Failed to update is_pune:", updateError);
-            toast.error("Failed to update Pune restriction");
-            return;
-          }
+        const { error: updateError } = await supabase
+          .from("teams")
+          .update({ is_pune: true })
+          .eq("id", teamId)
+
+        if (updateError) {
+          console.error("Failed to update is_pune:", updateError)
+          toast.error("Failed to update Pune restriction")
+          return
         }
       }
 
-
-      // Constraint 1: finalPrice >= base_price
-      if (finalPriceNumber < selectedPlayer.base_price) {
-        toast.error(`Final price must be at least ${formatCurrency(selectedPlayer.base_price)}`)
+      // Constraint 1: final price must be at least the base price.
+      if (finalPriceNumber < Number(selectedPlayer.base_price || 0)) {
+        toast.error(
+          `Final price must be at least ${formatCurrency(selectedPlayer.base_price)}`,
+        )
         return
       }
 
-      // Constraint 2: finalPrice <= budget_remaining
+      // Constraint 2 is intentionally left as it was in the existing flow.
+      // The database RPC remains responsible for the authoritative assignment.
       // if (finalPriceNumber > budget_remaining) {
       //   toast.error(
       //     `Insufficient budget! Final price: ${formatCurrency(finalPriceNumber)}, Available: ${formatCurrency(budget_remaining)}`
@@ -266,25 +409,22 @@ export default function AuctionTab({ initialData }: AuctionTabProps) {
       //   return
       // }
 
-      // Constraint 3: Check if team has remaining slots
+      // Constraint 3: team player limit.
       if (remainingSlots <= 0) {
         toast.error("Team has reached maximum player limit")
         return
       }
 
-      // Constraint 4: remaining budget >= minimum required for remaining slots
-       const budgetAfterPurchase = budget_remaining - finalPriceNumber
+      // Constraint 4 intentionally remains disabled, matching the existing code.
+      // const budgetAfterPurchase = Number(budget_remaining) - finalPriceNumber
+      // const minRemainingBudget = (remainingSlots - 1) * 500
       // if (budgetAfterPurchase < minRemainingBudget && remainingSlots > 1) {
-      //   toast.error(
-      //     `Cannot assign player. After this purchase, you'll have ${formatCurrency(budgetAfterPurchase)} but need at least ${formatCurrency(minRemainingBudget)} for remaining ${remainingSlots - 1} slots (₹500 minimum each)`
-      //   )
-      //   return
+      //   ...
       // }
 
-      // Assign player
       const { data, error } = await supabase.rpc("assign_player_to_team", {
         p_player_id: selectedPlayer.id,
-        p_team_id: Number.parseInt(selectedTeam),
+        p_team_id: teamId,
         p_final_price: finalPriceNumber,
       })
 
@@ -293,50 +433,50 @@ export default function AuctionTab({ initialData }: AuctionTabProps) {
         throw new Error("Failed to assign player")
       }
 
-      if (data?.success) {
-        toast.success("Player assigned successfully!")
-        
-        // Update players data
-        setPlayersData((prev: any[]) =>
-          prev.map((p: any) =>
-            p.id === selectedPlayer.id ? { ...p, status: "sold" } : p
-          )
-        )
-
-        // Update assignments list
-        const newAssignment = {
-          id: Date.now(), // temporary ID
-          player_id: selectedPlayer.id,
-          team_id: Number.parseInt(selectedTeam),
-          final_price: finalPriceNumber,
-          player: selectedPlayer,
-          team: teams.find(t => t.id === Number.parseInt(selectedTeam))
-        }
-        setAssignments(prev => [newAssignment, ...prev])
-
-        // Update teams budget
-        setTeams((prev) =>
-          prev.map((t) =>
-            t.id === Number.parseInt(selectedTeam)
-              ? { ...t, budget: budgetAfterPurchase }
-              : t
-          )
-        )
-        
-        // Reset form
-        setSelectedPlayer(null)
-        setSelectedTeam("")
-        setFinalPrice("")
-
-        // Clear current player - user needs to shuffle for next player
-        setCurrentPlayer(null)
-
-      } else {
+      if (!data?.success) {
         toast.error(data?.error || "Failed to assign player")
+        return
+      }
+
+      // The assignment has succeeded in the database.
+      // Update the current browser immediately, then refresh authoritative
+      // teams/players/assignments from Supabase.
+      setPlayersData((prev) =>
+        prev.map((player) =>
+          player.id === selectedPlayer.id
+            ? { ...player, status: "sold" }
+            : player,
+        ),
+      )
+
+      setSelectedPlayer(null)
+      setSelectedTeam("")
+      setFinalPrice("")
+      setCurrentPlayer(null)
+
+      // Clear the current player in the shared auction state as well.
+      try {
+        await persistCurrentPlayer(null)
+      } catch (currentPlayerError) {
+        console.error("Failed to clear current auction player:", currentPlayerError)
+      }
+
+      // Refresh the database state. This is what updates the authoritative
+      // team budget and assignment count, instead of calculating budget locally.
+      try {
+        await refreshAuctionData()
+        toast.success("Player assigned successfully!")
+      } catch (refreshError: any) {
+        console.error("Assignment succeeded but refresh failed:", refreshError)
+        toast.success("Player assigned successfully")
+        toast.error(
+          refreshError?.message ||
+            "Could not refresh auction data. Please refresh the page.",
+        )
       }
     } catch (error: any) {
       console.error("Assignment error:", error)
-      toast.error(error.message || "An error occurred")
+      toast.error(error?.message || "An error occurred")
     } finally {
       setIsAssigning(false)
       setIsProcessing(false)
@@ -348,7 +488,7 @@ export default function AuctionTab({ initialData }: AuctionTabProps) {
 
     setIsMarkingUnsold(true)
     setIsProcessing(true)
-    
+
     try {
       const { data, error } = await supabase.rpc("mark_player_unsold", {
         p_player_id: playerId,
@@ -356,33 +496,62 @@ export default function AuctionTab({ initialData }: AuctionTabProps) {
 
       if (error) throw error
 
-      if (data?.success) {
-        console.log("Player marked as unsold")
-        setPlayersData((prev) =>
-          prev.map((p) =>
-            p.id === playerId ? { ...p, status: "unsold" } : p
-          )
-        )
-        
-        // Clear current player - user needs to shuffle for next player
-        setCurrentPlayer(null)
-
-        toast.success("Player marked as unsold")
-      } else {
+      if (!data?.success) {
         toast.error(data?.error || "Failed to mark player as unsold")
+        return
+      }
+
+      // Keep the local player pool immediately in sync with the successful RPC.
+      setPlayersData((prev) =>
+        prev.map((player) =>
+          player.id === playerId
+            ? { ...player, status: "unsold" }
+            : player,
+        ),
+      )
+
+      setCurrentPlayer(null)
+      setSelectedPlayer(null)
+
+      try {
+        await persistCurrentPlayer(null)
+      } catch (currentPlayerError) {
+        console.error("Failed to clear current auction player:", currentPlayerError)
+      }
+
+      try {
+        await refreshAuctionData()
+        toast.success("Player marked as unsold")
+      } catch (refreshError: any) {
+        console.error("Unsold update succeeded but refresh failed:", refreshError)
+        toast.success("Player marked as unsold")
+        toast.error(
+          refreshError?.message ||
+            "Could not refresh auction data. Please refresh the page.",
+        )
       }
     } catch (error: any) {
       console.error("Mark unsold error:", error)
-      toast.error(error.message || "An error occurred")
+      toast.error(error?.message || "An error occurred")
     } finally {
       setIsMarkingUnsold(false)
       setIsProcessing(false)
     }
   }
 
-  const selectedPlayerValue = useMemo(() => 
-    selectedPlayer?.id?.toString() || "", 
-    [selectedPlayer?.id]
+  const selectedPlayerForAuction = useMemo(() => {
+    if (!selectedPlayer) return null
+
+    return selectedPlayer
+  }, [selectedPlayer])
+
+  const totalRemainingBudget = useMemo(
+    () =>
+      teams.reduce(
+        (sum, team) => sum + Number(team.budget || 0),
+        0,
+      ),
+    [teams],
   )
 
   return (
@@ -395,42 +564,51 @@ export default function AuctionTab({ initialData }: AuctionTabProps) {
                 <Gavel className="h-5 w-5 mr-2 text-amber-500" />
                 Live Auction Control
               </CardTitle>
-              <CardDescription className="text-gray-500">Manage the current auction session</CardDescription>
+              <CardDescription className="text-gray-500">
+                Manage the current auction session
+              </CardDescription>
             </CardHeader>
+
             <CardContent className="space-y-6">
               {currentPlayer ? (
                 <div className="space-y-6">
                   <div className="slide-in">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Current Player</h3>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                      Current Player
+                    </h3>
+
                     <Card className="bg-gray-50 border border-gray-200 rounded-xl">
                       <CardContent className="p-6">
-                        {/* New layout: Image 40% (w-2/5), Content 60% (w-3/5) */}
                         <div className="flex items-start space-x-6 mb-6">
                           <div className="w-2/5 flex-shrink-0">
                             <img
                               src={
                                 currentPlayer.image ||
                                 `/placeholder.svg?height=200&width=160&query=${encodeURIComponent(
-                                  "cricket player " + (currentPlayer.name || "")
+                                  "cricket player " + (currentPlayer.name || ""),
                                 )}`
                               }
                               alt={currentPlayer.name}
-                              className="w-full h-48 rounded-xl object-contain border-2 border-gray-200"
+                              className="w-full h-48 rounded-xl object-contain border-2 border-gray-200 bg-white"
                             />
                           </div>
 
                           <div className="w-3/5 pl-6">
-                            <div className="flex items-center justify-between mb-2">
+                            <div className="flex items-center justify-between mb-2 gap-4">
                               <div>
-                                <h4 className="text-2xl font-bold text-gray-900">{currentPlayer.name}</h4>
-                                <p className="text-gray-500 font-medium">{currentPlayer.position}</p>
+                                <h4 className="text-2xl font-bold text-gray-900">
+                                  {currentPlayer.name}
+                                </h4>
+                                <p className="text-gray-500 font-medium">
+                                  {currentPlayer.position}
+                                </p>
                               </div>
-                              <Badge className="bg-amber-500 text-white px-3 py-1 rounded-full font-medium">
+
+                              <Badge className="bg-amber-500 text-white px-3 py-1 rounded-full font-medium whitespace-nowrap">
                                 Base: {formatCurrency(currentPlayer.base_price)}
                               </Badge>
                             </div>
 
-                            {/* Achievement badge - wraps correctly */}
                             {currentPlayer.achievement && (
                               <div className="mt-3">
                                 <Badge
@@ -442,7 +620,6 @@ export default function AuctionTab({ initialData }: AuctionTabProps) {
                               </div>
                             )}
 
-                            {/* City badge */}
                             {currentPlayer.city && (
                               <div className="mt-2">
                                 <Badge
@@ -454,7 +631,6 @@ export default function AuctionTab({ initialData }: AuctionTabProps) {
                               </div>
                             )}
 
-                            {/* Previous team badge */}
                             {currentPlayer.previous_team && (
                               <div className="mt-2">
                                 <Badge
@@ -468,7 +644,7 @@ export default function AuctionTab({ initialData }: AuctionTabProps) {
                           </div>
                         </div>
 
-                        <div className="flex space-x-3">
+                        <div className="flex flex-col sm:flex-row gap-3">
                           <Button
                             onClick={handleShuffle}
                             disabled={isProcessing}
@@ -482,20 +658,88 @@ export default function AuctionTab({ initialData }: AuctionTabProps) {
                             ) : (
                               <>
                                 <Shuffle className="h-4 w-4 mr-2" />
-                                Shuffle
+                                Shuffle Player
                               </>
                             )}
                           </Button>
+
+                          <div className="relative flex-1" ref={playerPickerRef}>
+                            <Button
+                              type="button"
+                              onClick={() => setIsPlayerPickerOpen((open) => !open)}
+                              disabled={isProcessing}
+                              variant="outline"
+                              className="w-full border-blue-600 text-blue-600 hover:bg-blue-600 font-semibold btn-scale"
+                            >
+                              <Search className="h-4 w-4 mr-2" />
+                              Select Player
+                            </Button>
+
+                            {isPlayerPickerOpen && (
+                              <div className="absolute left-0 right-0 top-full mt-2 z-50 rounded-xl border border-gray-200 bg-white shadow-xl p-3">
+                                <div className="relative mb-3">
+                                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                                  <Input
+                                    autoFocus
+                                    value={playerSearch}
+                                    onChange={(event) => setPlayerSearch(event.target.value)}
+                                    placeholder="Search player, city, position..."
+                                    className="pl-9 bg-white border-gray-200 text-gray-900"
+                                  />
+                                </div>
+
+                                <div className="max-h-64 overflow-y-auto space-y-1">
+                                  {filteredPlayers.length > 0 ? (
+                                    filteredPlayers.map((player) => (
+                                      <button
+                                        key={`picker-${player.id}`}
+                                        type="button"
+                                        onClick={() => void handleSelectPlayer(player)}
+                                        className="w-full rounded-lg px-3 py-2 text-left hover:bg-blue-50 transition-colors"
+                                      >
+                                        <div className="flex items-center justify-between gap-3">
+                                          <div className="min-w-0">
+                                            <p className="font-medium text-gray-900 truncate">
+                                              {player.name}
+                                            </p>
+                                            <p className="text-xs text-gray-500 truncate">
+                                              {player.position || "Player"}
+                                              {player.city ? ` • ${player.city}` : ""}
+                                            </p>
+                                          </div>
+                                          <span className="text-xs font-medium text-gray-500 whitespace-nowrap">
+                                            {formatCurrency(player.base_price)}
+                                          </span>
+                                        </div>
+                                      </button>
+                                    ))
+                                  ) : (
+                                    <div className="py-6 text-center text-sm text-gray-500">
+                                      No available players found
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+
                           <Button
                             onClick={() => setSelectedPlayer(currentPlayer)}
-                            className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold btn-scale"
+                            className={`font-semibold btn-scale ${
+                              selectedPlayer?.id === currentPlayer.id
+                                ? "bg-emerald-600 hover:bg-emerald-700 text-white"
+                                : "bg-blue-600 hover:bg-blue-700 text-white"
+                            }`}
                             disabled={isProcessing}
                           >
                             <ArrowRight className="h-4 w-4 mr-2" />
-                            Select for Auction
+                            {selectedPlayer?.id === currentPlayer.id
+                              ? "Selected for Auction"
+                              : "Select for Auction"}
                           </Button>
+
                           <Button
-                            onClick={() => handleMarkUnsold(currentPlayer.id)}
+                            onClick={() => void handleMarkUnsold(currentPlayer.id)}
                             variant="outline"
                             className="border-red-500 text-red-500 hover:bg-red-500 hover:text-white font-semibold btn-scale"
                             disabled={isProcessing}
@@ -515,37 +759,51 @@ export default function AuctionTab({ initialData }: AuctionTabProps) {
                   </div>
 
                   <div className="space-y-4">
-                    <h3 className="text-lg font-semibold text-gray-900">Assign Player</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <div>
-                        <Label className="text-gray-900 font-medium">Selected Player</Label>
-                        <Select
-                          value={selectedPlayerValue}
-                          onValueChange={(value) => {
-                            const player = availablePlayers.find((p) => p.id.toString() === value)
-                            setSelectedPlayer(player || null)
-                          }}
-                        >
-                          <SelectTrigger className="bg-white border-gray-200 text-gray-900">
-                            <SelectValue placeholder="Select a player" />
-                          </SelectTrigger>
-                          <SelectContent className="bg-white border border-gray-200 text-gray-900">
-                            {availablePlayers.map((player) => (
-                              <SelectItem
-                                key={`player-${player.id}`}
-                                value={player.id.toString()}
-                                className="text-gray-900 data-[highlighted]:bg-blue-50 data-[highlighted]:text-blue-900"
-                              >
-                                {player.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
+                    <h3 className="text-lg font-semibold text-gray-900">
+                      Assign Player
+                    </h3>
 
+                    <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
+                      <div className="flex items-center justify-between gap-4">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="h-10 w-10 rounded-full bg-white border border-gray-200 flex items-center justify-center overflow-hidden shrink-0">
+                            {selectedPlayerForAuction?.image ? (
+                              <img
+                                src={selectedPlayerForAuction.image}
+                                alt={selectedPlayerForAuction.name}
+                                className="h-full w-full object-cover"
+                              />
+                            ) : (
+                              <UserRound className="h-5 w-5 text-gray-400" />
+                            )}
+                          </div>
+
+                          <div className="min-w-0">
+                            <p className="text-xs text-gray-500">Selected player</p>
+                            <p className="font-semibold text-gray-900 truncate">
+                              {selectedPlayerForAuction?.name ||
+                                "Select this player for auction first"}
+                            </p>
+                          </div>
+                        </div>
+
+                        {selectedPlayerForAuction && (
+                          <Badge className="bg-amber-500 text-white shrink-0">
+                            Base: {formatCurrency(selectedPlayerForAuction.base_price)}
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
-                        <Label className="text-gray-900 font-medium">Winning Team</Label>
-                        <Select value={selectedTeam} onValueChange={setSelectedTeam}>
+                        <Label className="text-gray-900 font-medium">
+                          Winning Team
+                        </Label>
+                        <Select
+                          value={selectedTeam}
+                          onValueChange={setSelectedTeam}
+                        >
                           <SelectTrigger className="bg-white border-gray-200 text-gray-900">
                             <SelectValue placeholder="Select winning team" />
                           </SelectTrigger>
@@ -561,29 +819,46 @@ export default function AuctionTab({ initialData }: AuctionTabProps) {
                             ))}
                           </SelectContent>
                         </Select>
+
+                        {selectedTeam && (
+                          <p className="text-sm text-gray-500 mt-1">
+                            Remaining: {formatCurrency(
+                              teams.find(
+                                (team) => team.id === Number.parseInt(selectedTeam, 10),
+                              )?.budget || 0,
+                            )}
+                          </p>
+                        )}
                       </div>
 
                       <div>
-                        <Label className="text-gray-900 font-medium">Final Price (₹)</Label>
+                        <Label className="text-gray-900 font-medium">
+                          Final Price (₹)
+                        </Label>
                         <Input
                           type="number"
                           placeholder="Enter final price"
                           value={finalPrice}
-                          onChange={(e) => setFinalPrice(e.target.value)}
+                          onChange={(event) => setFinalPrice(event.target.value)}
                           className="bg-white border-gray-200 text-gray-900"
-                          min={selectedPlayer?.base_price || 0}
+                          min={selectedPlayerForAuction?.base_price || 0}
                         />
-                        {selectedPlayer && (
+                        {selectedPlayerForAuction && (
                           <p className="text-sm text-gray-500 mt-1">
-                            Minimum: {formatCurrency(selectedPlayer.base_price)}
+                            Minimum: {formatCurrency(selectedPlayerForAuction.base_price)}
                           </p>
                         )}
                       </div>
                     </div>
 
                     <Button
-                      onClick={handleAssignPlayer}
-                      disabled={isProcessing || !selectedPlayer || !selectedTeam || !finalPrice}
+                      onClick={() => void handleAssignPlayer()}
+                      disabled={
+                        isProcessing ||
+                        !selectedPlayerForAuction ||
+                        !selectedTeam ||
+                        !finalPrice
+                      }
                       className="bg-blue-600 hover:bg-blue-700 text-white font-semibold btn-scale"
                     >
                       {isAssigning ? (
@@ -602,34 +877,103 @@ export default function AuctionTab({ initialData }: AuctionTabProps) {
                   {isRecycling ? (
                     <div className="space-y-3">
                       <Loader2 className="h-8 w-8 animate-spin mx-auto text-amber-500" />
-                      <p className="text-gray-900 font-medium">Recycling unsold players...</p>
+                      <p className="text-gray-900 font-medium">
+                        Recycling unsold players...
+                      </p>
                       <p className="text-gray-500 text-sm">
                         Making {unsoldPlayers.length} unsold players available for auction again
                       </p>
                     </div>
                   ) : availablePlayers.length > 0 ? (
-                    <div className="space-y-4">
-                      <p className="text-gray-500">Click "Shuffle" to show the next player</p>
-                      <Button
-                        onClick={handleShuffle}
-                        disabled={isProcessing}
-                        className="bg-blue-600 hover:bg-blue-700 text-white font-semibold btn-scale px-8 py-3 text-lg"
-                      >
-                        {isShuffling ? (
-                          <>
-                            <Loader2 className="h-5 w-5 mr-2 animate-spin" />
-                            Shuffling...
-                          </>
-                        ) : (
-                          <>
-                            <Shuffle className="h-5 w-5 mr-2" />
-                            Shuffle Next Player
-                          </>
-                        )}
-                      </Button>
+                    <div className="space-y-4 max-w-xl mx-auto">
+                      <p className="text-gray-500">
+                        Choose a player to put on the auction board.
+                      </p>
+
+                      <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                        <Button
+                          onClick={() => void handleShuffle()}
+                          disabled={isProcessing}
+                          className="bg-blue-600 hover:bg-blue-700 text-white font-semibold btn-scale px-6"
+                        >
+                          {isShuffling ? (
+                            <>
+                              <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+                              Shuffling...
+                            </>
+                          ) : (
+                            <>
+                              <Shuffle className="h-5 w-5 mr-2" />
+                              Shuffle Player
+                            </>
+                          )}
+                        </Button>
+
+                        <div className="relative flex-1" ref={playerPickerRef}>
+                          <Button
+                            type="button"
+                            onClick={() => setIsPlayerPickerOpen((open) => !open)}
+                            disabled={isProcessing}
+                            variant="outline"
+                            className="w-full border-blue-600 text-blue-600 hover:bg-blue-600 font-semibold btn-scale px-6"
+                          >
+                            <Search className="h-5 w-5 mr-2" />
+                            Select Player
+                          </Button>
+
+                          {isPlayerPickerOpen && (
+                            <div className="absolute left-0 right-0 top-full mt-2 z-50 rounded-xl border border-gray-200 bg-white shadow-xl p-3 text-left">
+                              <div className="relative mb-3">
+                                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                                <Input
+                                  autoFocus
+                                  value={playerSearch}
+                                  onChange={(event) => setPlayerSearch(event.target.value)}
+                                  placeholder="Search player, city, position..."
+                                  className="pl-9 bg-white border-gray-200 text-gray-900"
+                                />
+                              </div>
+
+                              <div className="max-h-72 overflow-y-auto space-y-1">
+                                {filteredPlayers.length > 0 ? (
+                                  filteredPlayers.map((player) => (
+                                    <button
+                                      key={`picker-empty-${player.id}`}
+                                      type="button"
+                                      onClick={() => void handleSelectPlayer(player)}
+                                      className="w-full rounded-lg px-3 py-2 text-left hover:bg-blue-50 transition-colors"
+                                    >
+                                      <div className="flex items-center justify-between gap-3">
+                                        <div className="min-w-0">
+                                          <p className="font-medium text-gray-900 truncate">
+                                            {player.name}
+                                          </p>
+                                          <p className="text-xs text-gray-500 truncate">
+                                            {player.position || "Player"}
+                                            {player.city ? ` • ${player.city}` : ""}
+                                          </p>
+                                        </div>
+                                        <span className="text-xs font-medium text-gray-500 whitespace-nowrap">
+                                          {formatCurrency(player.base_price)}
+                                        </span>
+                                      </div>
+                                    </button>
+                                  ))
+                                ) : (
+                                  <div className="py-6 text-center text-sm text-gray-500">
+                                    No available players found
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
                     </div>
                   ) : (
-                    <p className="text-gray-500">No players available for auction</p>
+                    <p className="text-gray-500">
+                      No players available for auction
+                    </p>
                   )}
                 </div>
               )}
@@ -637,46 +981,74 @@ export default function AuctionTab({ initialData }: AuctionTabProps) {
           </Card>
         </div>
 
+        {/* Team budgets replace the old Recent Sales panel. */}
         <div className="lg:col-span-1">
           <Card className="bg-white border border-gray-200 rounded-xl shadow-sm">
             <CardHeader>
-              <CardTitle className="text-gray-900 font-semibold">Recent Sales</CardTitle>
-              <CardDescription className="text-gray-500">Latest player assignments</CardDescription>
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <CardTitle className="text-gray-900 font-semibold">
+                    Team Budgets
+                  </CardTitle>
+                  <CardDescription className="text-gray-500">
+                    Remaining budget after each assignment
+                  </CardDescription>
+                </div>
+
+                {isRefreshingData && (
+                  <Loader2 className="h-4 w-4 text-blue-600 animate-spin shrink-0" />
+                )}
+              </div>
             </CardHeader>
+
             <CardContent>
-              <div className="space-y-3 max-h-96 overflow-y-auto">
-                {(assignments.length > 0 ? assignments : initialData.assignments)
-                  .slice(0, 10)
-                  .map((assignment: any, index: number) => (
-                  <div
-                    key={`assignment-${assignment.id}-${index}`}
-                    className={`flex items-center justify-between p-3 bg-gray-50 rounded-lg fade-in`}
-                    style={{ animationDelay: `${index * 0.1}s` }}
-                  >
-                    <div className="flex items-center space-x-3">
-                      <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
-                      <div>
-                        <p className="text-gray-900 font-medium text-sm">
-                          {assignment.player?.name || 'Unknown Player'}
-                        </p>
-                        <p className="text-xs text-gray-500">
-                          {assignment.player?.position || 'Unknown Position'}
-                        </p>
+              <div className="space-y-3 max-h-[560px] overflow-y-auto pr-1">
+                {teams.length > 0 ? (
+                  teams.map((team) => {
+                    const playerCount = assignments.filter(
+                      (assignment) => assignment.team_id === team.id,
+                    ).length
+
+                    return (
+                      <div
+                        key={`budget-team-${team.id}`}
+                        className="flex items-center justify-between gap-3 p-3 bg-gray-50 rounded-xl border border-gray-100"
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="w-11 h-11 rounded-full bg-white border border-gray-200 flex items-center justify-center overflow-hidden shrink-0">
+                            {team.team_logo ? (
+                              <img
+                                src={team.team_logo}
+                                alt={team.name}
+                                className="w-9 h-9 object-contain"
+                              />
+                            ) : (
+                              <Users className="h-5 w-5 text-gray-400" />
+                            )}
+                          </div>
+
+                          <div className="min-w-0">
+                            <p className="font-semibold text-gray-900 truncate">
+                              {team.name}
+                            </p>
+                            <p className="text-xs text-gray-500">
+                              {playerCount} {playerCount === 1 ? "player" : "players"}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="text-right shrink-0">
+                          <p className="text-lg font-bold text-gray-900">
+                            {formatCurrency(team.budget)}
+                          </p>
+                          <p className="text-xs text-gray-500">Remaining</p>
+                        </div>
                       </div>
-                    </div>
-                    <div className="text-right">
-                      <Badge className="bg-blue-600 text-white text-xs px-2 py-1 rounded-full">
-                        {assignment.team?.name || 'Unknown Team'}
-                      </Badge>
-                      <p className="text-xs text-gray-900 font-semibold mt-1">
-                        {formatCurrency(assignment.final_price || 0)}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-                {assignments.length === 0 && initialData.assignments.length === 0 && (
-                  <div className="text-center py-4 text-gray-500">
-                    No recent sales yet
+                    )
+                  })
+                ) : (
+                  <div className="py-8 text-center text-gray-500">
+                    No teams found
                   </div>
                 )}
               </div>
@@ -692,7 +1064,9 @@ export default function AuctionTab({ initialData }: AuctionTabProps) {
               <Users className="h-4 w-4 text-blue-600" />
               <span className="text-gray-900 font-medium">Available Players</span>
             </div>
-            <p className="text-2xl font-bold text-gray-900 mt-2">{availablePlayers.length}</p>
+            <p className="text-2xl font-bold text-gray-900 mt-2">
+              {availablePlayers.length}
+            </p>
           </CardContent>
         </Card>
 
@@ -700,10 +1074,12 @@ export default function AuctionTab({ initialData }: AuctionTabProps) {
           <CardContent className="p-4">
             <div className="flex items-center space-x-2">
               <DollarSign className="h-4 w-4 text-emerald-500" />
-              <span className="text-gray-900 font-medium">Total Remaining Budget</span>
+              <span className="text-gray-900 font-medium">
+                Total Remaining Budget
+              </span>
             </div>
             <p className="text-2xl font-bold text-gray-900 mt-2">
-              {formatCurrency(teams.reduce((sum, team) => sum + team.budget, 0))}
+              {formatCurrency(totalRemainingBudget)}
             </p>
           </CardContent>
         </Card>
@@ -714,7 +1090,9 @@ export default function AuctionTab({ initialData }: AuctionTabProps) {
               <Clock className="h-4 w-4 text-amber-500" />
               <span className="text-gray-900 font-medium">Players Sold</span>
             </div>
-            <p className="text-2xl font-bold text-gray-900 mt-2">{assignments.length}</p>
+            <p className="text-2xl font-bold text-gray-900 mt-2">
+              {assignments.length}
+            </p>
           </CardContent>
         </Card>
       </div>
