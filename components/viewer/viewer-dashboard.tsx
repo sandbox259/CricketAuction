@@ -700,16 +700,16 @@ export default function ViewerDashboard({
             >
               <Card className="flex items-center justify-center p-4 shadow-sm">
                 <img
-                  src="/logos/aashiyanalogo.jpg"
-                  alt="Sponsor 1"
+                  src="/logos/sarjif.jpg"
+                  alt="Sponsor 8"
                   className="h-12 w-auto object-contain"
                 />
               </Card>
 
               <Card className="flex items-center justify-center p-4 shadow-sm">
                 <img
-                  src="/logos/designer.jpg"
-                  alt="Sponsor 2"
+                  src="/logos/mukh.png"
+                  alt="Sponsor 7"
                   className="h-12 w-auto object-contain"
                 />
               </Card>
@@ -726,6 +726,15 @@ export default function ViewerDashboard({
                 <img
                   src="/logos/mithiyaaj.jpg"
                   alt="Sponsor 4"
+                  className="h-12 w-auto object-contain"
+                />
+              </Card>
+
+
+              <Card className="flex items-center justify-center p-4 shadow-sm">
+                <img
+                  src="/logos/aashiyanalogo.jpg"
+                  alt="Sponsor 1"
                   className="h-12 w-auto object-contain"
                 />
               </Card>
@@ -748,16 +757,8 @@ export default function ViewerDashboard({
 
               <Card className="flex items-center justify-center p-4 shadow-sm">
                 <img
-                  src="/logos/mukh.png"
-                  alt="Sponsor 7"
-                  className="h-12 w-auto object-contain"
-                />
-              </Card>
-
-              <Card className="flex items-center justify-center p-4 shadow-sm">
-                <img
-                  src="/logos/sarjif.jpg"
-                  alt="Sponsor 8"
+                  src="/logos/designer.jpg"
+                  alt="Sponsor 2"
                   className="h-12 w-auto object-contain"
                 />
               </Card>
