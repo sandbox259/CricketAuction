@@ -16,6 +16,8 @@ interface AuctionData {
     position?: string
     achievement?: string
     base_price?: number
+    previous_team?: string
+    city?: string
   } | null
 }
 
@@ -113,7 +115,7 @@ export function useRealtimeAuction(initialData: AuctionData) {
                   const currentPlayerId = newState.current_player_id
                   const { data: currentPlayerData } = await supabase
                     .from("players")
-                    .select("id, name, image, position, achievement, base_price")
+                    .select("id, name, image, position, achievement, base_price, previous_team, city")
                     .eq("id", currentPlayerId)
                   setData((prev) => ({ ...prev, currentPlayer: currentPlayerData?.[0] || null }))
                   updateTimestamp()
