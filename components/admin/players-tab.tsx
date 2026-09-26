@@ -164,8 +164,8 @@ export default function PlayersTab({ initialPlayers }: PlayersTabProps) {
                   <SelectContent className="bg-white border border-gray-200 rounded-md shadow-lg p-1 max-h-60 overflow-y-auto">
                     <SelectItem value="Batsman" className="text-gray-900 hover:bg-blue-50 hover:text-gray-900 rounded-md px-2 py-1">Batsman</SelectItem>
                     <SelectItem value="Bowler" className="text-gray-900 hover:bg-blue-50 hover:text-gray-900 rounded-md px-2 py-1">Bowler</SelectItem>
-                    <SelectItem value="All-rounder" className="text-gray-900 hover:bg-blue-50 hover:text-gray-900 rounded-md px-2 py-1">All-rounder</SelectItem>
-                    <SelectItem value="Wicket-keeper" className="text-gray-900 hover:bg-blue-50 hover:text-gray-900 rounded-md px-2 py-1">Wicket-keeper</SelectItem>
+                    <SelectItem value="All Rounder" className="text-gray-900 hover:bg-blue-50 hover:text-gray-900 rounded-md px-2 py-1">All Rounder</SelectItem>
+                    <SelectItem value="Wicket Keeper" className="text-gray-900 hover:bg-blue-50 hover:text-gray-900 rounded-md px-2 py-1">Wicket Keeper</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
