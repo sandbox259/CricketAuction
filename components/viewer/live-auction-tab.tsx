@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import {
   Card,
   CardContent,
@@ -18,7 +18,206 @@ import {
   MapPin,
   X,
   ZoomIn,
+  Gem,
+  Medal,
+  Star,
 } from "lucide-react"
+import JewelReveal from "@/components/animations/JewelReveal"
+import TreasureReveal from "@/components/animations/TreasureReveal"
+import SuperstarReveal from "@/components/animations/SuperstarReveal"
+
+/* =========================================================
+   SPECIAL PLAYER CONFIGURATION
+   ========================================================= */
+
+// Change this single value whenever you want to change the
+// duration of the entrance animation.
+//
+// 3000 = 3 seconds
+// 2000 = 2 seconds
+// 5000 = 5 seconds
+const HIGHLIGHT_DURATION_MS = 3000
+
+// Players can belong to multiple categories.
+// Jewel   = played 9 seasons.
+// Treasure = played 8 seasons.
+// Superstar = standout performer / MVP-level performance in the last 3 tournaments.
+// const JEWEL_PLAYER_IDS: number[] = [
+//   61,
+//   // 101,
+//   // 105,
+//   // 127,
+// ]
+
+// const TREASURE_PLAYER_IDS: number[] = [
+//   62,
+//   // 203,
+//   // 214,
+//   // 219,
+// ]
+
+// const SUPERSTAR_PLAYER_IDS: number[] = [
+//   65,
+//   // 301,
+//   // 308,
+//   // 315,
+// ]
+
+const JEWEL_PLAYER_IDS: number[] = [
+  103,
+  145,
+  141,
+  136,
+  281,
+  130,
+  33,
+  51,
+  88,
+  101,
+  47,
+  91,
+  90,
+  99,
+  105,
+  // 101,
+  // 105,
+]
+
+const TREASURE_PLAYER_IDS: number[] = [
+  27,
+  81,
+  59,
+  60,
+  118,
+  26,
+  278,
+  66,
+  42,
+  279,
+  53,
+  286,
+  46,
+  146,
+  76,
+  84,
+  // 203,
+  // 214,
+]
+
+const SUPERSTAR_PLAYER_IDS: number[] = [
+  81,
+  111,
+  283,
+  141,
+  104,
+  49,
+  115,
+  60,
+  69,
+  // 301,
+  // 308,
+]
+
+type PlayerHighlight = "jewel" | "treasure" | "superstar"
+
+function getPlayerHighlights(playerId: unknown): PlayerHighlight[] {
+  if (playerId === null || playerId === undefined) {
+    return []
+  }
+
+  const id = Number(playerId)
+  const highlights: PlayerHighlight[] = []
+
+  const isJewel = JEWEL_PLAYER_IDS.includes(id)
+  const isTreasure = TREASURE_PLAYER_IDS.includes(id)
+
+  if (isJewel) {
+    highlights.push("jewel")
+  }
+
+  // A Jewel has played 9 seasons, so they also qualify for the 8-season Treasure badge.
+  if (isJewel || isTreasure) {
+    highlights.push("treasure")
+  }
+
+  if (SUPERSTAR_PLAYER_IDS.includes(id)) {
+    highlights.push("superstar")
+  }
+
+  return highlights
+}
+
+// Reveal priority: Superstar > Jewel > Treasure.
+// The badges remain independent, so an overlapping player shows every badge they qualify for.
+function getPrimaryPlayerHighlight(
+  highlights: PlayerHighlight[],
+): PlayerHighlight | null {
+  if (highlights.includes("superstar")) return "superstar"
+  if (highlights.includes("jewel")) return "jewel"
+  if (highlights.includes("treasure")) return "treasure"
+  return null
+}
+
+/* =========================================================
+   REVEAL COMPONENTS
+   ========================================================= */
+
+/* =========================================================
+   PERMANENT CATEGORY BADGE
+   ========================================================= */
+
+function PlayerHighlightBadge({
+  highlight,
+}: {
+  highlight: PlayerHighlight
+}) {
+  if (highlight === "jewel") {
+    return (
+      <Badge
+        className="
+          shrink-0 rounded-full border border-yellow-300 bg-gradient-to-r
+          from-yellow-100 via-yellow-50 to-amber-100 px-2.5 py-1 text-[10px]
+          font-black tracking-wide text-yellow-700 shadow-sm
+        "
+      >
+        <Gem className="mr-1 h-3 w-3" />
+        JEWEL
+      </Badge>
+    )
+  }
+
+  if (highlight === "treasure") {
+    return (
+      <Badge
+        className="
+          shrink-0 rounded-full border border-slate-300 bg-gradient-to-r
+          from-slate-100 via-white to-slate-200 px-2.5 py-1 text-[10px]
+          font-black tracking-wide text-slate-600 shadow-sm
+        "
+      >
+        <Medal className="mr-1 h-3 w-3" />
+        TREASURE
+      </Badge>
+    )
+  }
+
+  return (
+    <Badge
+      className="
+        shrink-0 rounded-full border border-yellow-300 bg-gradient-to-r
+        from-amber-100 via-yellow-50 to-yellow-200 px-2.5 py-1 text-[10px]
+        font-black tracking-wide text-amber-700 shadow-sm
+      "
+    >
+      <Star className="mr-1 h-3 w-3 fill-amber-500 text-amber-500" />
+      SUPERSTAR
+    </Badge>
+  )
+}
+
+/* =========================================================
+   MAIN COMPONENT
+   ========================================================= */
 
 interface LiveAuctionTabProps {
   currentPlayer: any
@@ -35,6 +234,10 @@ export default function LiveAuctionTab({
   data,
 }: LiveAuctionTabProps) {
   const [showPlayerImage, setShowPlayerImage] = useState(false)
+  const [showHighlight, setShowHighlight] = useState(false)
+
+  const playerHighlights = getPlayerHighlights(currentPlayer?.id)
+  const playerReveal = getPrimaryPlayerHighlight(playerHighlights)
 
   const formatCurrency = (value: number) =>
     new Intl.NumberFormat("en-IN", {
@@ -42,6 +245,33 @@ export default function LiveAuctionTab({
       currency: "INR",
       maximumFractionDigits: 0,
     }).format(value)
+
+  /* =========================================================
+     TRIGGER SPECIAL ANIMATION WHEN PLAYER CHANGES
+     ========================================================= */
+
+  useEffect(() => {
+    setShowPlayerImage(false)
+
+    if (!currentPlayer?.id || !playerReveal) {
+      setShowHighlight(false)
+      return
+    }
+
+    setShowHighlight(true)
+
+    const timer = window.setTimeout(() => {
+      setShowHighlight(false)
+    }, HIGHLIGHT_DURATION_MS)
+
+    return () => {
+      window.clearTimeout(timer)
+    }
+  }, [currentPlayer?.id, playerReveal])
+
+  /* =========================================================
+     DATA
+     ========================================================= */
 
   const availablePlayers = data.players.filter(
     (p) => p.status === "available"
@@ -70,9 +300,11 @@ export default function LiveAuctionTab({
       {/* =========================================================
           CURRENT PLAYER
           ========================================================= */}
+
       {currentPlayer ? (
         <Card
           className="
+            relative
             w-full
             overflow-hidden
             rounded-2xl
@@ -82,9 +314,32 @@ export default function LiveAuctionTab({
             shadow-sm
           "
         >
+
+          {/* =====================================================
+              SPECIAL PLAYER ENTRANCE ANIMATION
+              ===================================================== */}
+
+          {showHighlight && playerReveal && (
+            <div
+              className="pointer-events-none absolute inset-0 z-30 overflow-hidden rounded-2xl"
+              aria-hidden="true"
+            >
+              {playerReveal === "jewel" && (
+                <JewelReveal durationMs={HIGHLIGHT_DURATION_MS} />
+              )}
+              {playerReveal === "treasure" && (
+                <TreasureReveal durationMs={HIGHLIGHT_DURATION_MS} />
+              )}
+              {playerReveal === "superstar" && (
+                <SuperstarReveal durationMs={HIGHLIGHT_DURATION_MS} />
+              )}
+            </div>
+          )}
+
           {/* Header */}
           <CardHeader className="px-3 py-2.5 sm:px-5 sm:py-3">
             <div className="flex items-center justify-between gap-3">
+
               <div className="flex min-w-0 items-center gap-2">
                 <Gavel className="h-5 w-5 shrink-0 text-blue-600" />
 
@@ -93,21 +348,33 @@ export default function LiveAuctionTab({
                 </span>
               </div>
 
-              <Badge
-                className="
-                  shrink-0
-                  rounded-full
-                  bg-red-500
-                  px-2.5
-                  py-1
-                  text-[10px]
-                  font-semibold
-                  text-white
-                  shadow-sm
-                "
-              >
-                LIVE
-              </Badge>
+              <div className="flex items-center gap-2">
+                {/* Permanent player category */}
+                {playerHighlights.map((highlight) => (
+                  <PlayerHighlightBadge
+                    key={highlight}
+                    highlight={highlight}
+                  />
+                ))}
+
+                {/* Live badge */}
+                <Badge
+                  className="
+                    shrink-0
+                    rounded-full
+                    bg-red-500
+                    px-2.5
+                    py-1
+                    text-[10px]
+                    font-semibold
+                    text-white
+                    shadow-sm
+                  "
+                >
+                  LIVE
+                </Badge>
+              </div>
+
             </div>
           </CardHeader>
 
@@ -116,11 +383,13 @@ export default function LiveAuctionTab({
             {/* ===================================================
                 COMPACT PLAYER ROW
                 =================================================== */}
+
             <div className="flex items-start gap-3 sm:gap-5">
 
               {/* =================================================
                   ROUND PLAYER PHOTO
                   ================================================= */}
+
               <div className="shrink-0">
                 {currentPlayer.image ? (
                   <button
@@ -184,6 +453,7 @@ export default function LiveAuctionTab({
                     >
                       <div className="flex flex-col items-center gap-1">
                         <ZoomIn className="h-5 w-5" />
+
                         <span className="text-[10px] font-medium">
                           View
                         </span>
@@ -238,23 +508,26 @@ export default function LiveAuctionTab({
               {/* =================================================
                   PLAYER INFORMATION
                   ================================================= */}
+
               <div className="min-w-0 flex-1">
 
                 {/* Name */}
-                <h2
-                  className="
-                    break-words
-                    whitespace-normal
-                    text-xl
-                    font-bold
-                    leading-tight
-                    text-gray-900
-                    sm:text-2xl
-                    md:text-3xl
-                  "
-                >
-                  {currentPlayer.name}
-                </h2>
+                <div className="flex flex-wrap items-center gap-2">
+                  <h2
+                    className="
+                      break-words
+                      whitespace-normal
+                      text-xl
+                      font-bold
+                      leading-tight
+                      text-gray-900
+                      sm:text-2xl
+                      md:text-3xl
+                    "
+                  >
+                    {currentPlayer.name}
+                  </h2>
+                </div>
 
                 {/* Position */}
                 {currentPlayer.position && (
@@ -338,6 +611,7 @@ export default function LiveAuctionTab({
             {/* ===================================================
                 ACHIEVEMENT
                 =================================================== */}
+
             {currentPlayer.achievement && (
               <div
                 className="
@@ -372,6 +646,7 @@ export default function LiveAuctionTab({
             {/* ===================================================
                 BASE PRICE + STATUS
                 =================================================== */}
+
             <div
               className="
                 mt-3
@@ -406,6 +681,7 @@ export default function LiveAuctionTab({
         /* =======================================================
            NO ACTIVE AUCTION
            ======================================================= */
+
         <Card className="rounded-2xl border-gray-200 bg-white shadow-sm">
           <CardContent className="space-y-2 p-6 text-center">
             <Clock className="mx-auto mb-2 h-12 w-12 text-gray-400" />
@@ -424,6 +700,7 @@ export default function LiveAuctionTab({
       {/* =========================================================
           AUCTION PROGRESS
           ========================================================= */}
+
       <Card className="w-full rounded-2xl border-gray-200 bg-white shadow-sm">
         <CardHeader className="px-3 pb-1.5 pt-2.5 sm:px-4">
           <CardTitle className="flex items-center text-sm font-semibold text-gray-900 sm:text-base">
@@ -488,6 +765,7 @@ export default function LiveAuctionTab({
       {/* =========================================================
           RECENT SALES
           ========================================================= */}
+
       <Card className="w-full rounded-2xl border-gray-200 bg-white shadow-sm">
         <CardHeader className="px-3 pb-1.5 pt-2.5 sm:px-4">
           <CardTitle className="flex items-center text-sm font-semibold text-gray-900 sm:text-base">
@@ -529,11 +807,13 @@ export default function LiveAuctionTab({
                   </div>
 
                   <div className="shrink-0 text-right">
-                    {/* <p className="text-xs font-semibold text-gray-900">
+                    {/*
+                    <p className="text-xs font-semibold text-gray-900">
                       {formatCurrency(
                         assignment.final_price
                       )}
-                    </p> */}
+                    </p>
+                    */}
 
                     <p className="text-[10px] text-gray-500">
                       {assignment.assigned_at
@@ -567,6 +847,7 @@ export default function LiveAuctionTab({
       {/* =========================================================
           FULLSCREEN PLAYER PHOTO
           ========================================================= */}
+
       {showPlayerImage && currentPlayer?.image && (
         <div
           className="
@@ -659,6 +940,8 @@ export default function LiveAuctionTab({
           </div>
         </div>
       )}
+
+
     </div>
   )
 }

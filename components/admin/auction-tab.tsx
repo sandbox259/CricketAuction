@@ -17,9 +17,15 @@ import {
   Shuffle,
   Search,
   UserRound,
+  Gem,
+  Medal,
+  Star,
 } from "lucide-react"
 import { supabase } from "@/lib/supabase/client"
 import { toast } from "sonner"
+import JewelReveal from "@/components/animations/JewelReveal"
+import TreasureReveal from "@/components/animations/TreasureReveal"
+import SuperstarReveal from "@/components/animations/SuperstarReveal"
 
 interface AuctionTabProps {
   initialData: {
@@ -36,6 +42,136 @@ const formatCurrency = (value: number) =>
     maximumFractionDigits: 0,
   }).format(Number(value) || 0)
 
+const HIGHLIGHT_DURATION_MS = 3000
+
+// Keep these as independent arrays so a player can belong to multiple
+// categories at the same time.
+const JEWEL_PLAYER_IDS: number[] = [
+  103,
+  145,
+  141,
+  136,
+  281,
+  130,
+  33,
+  51,
+  88,
+  101,
+  47,
+  91,
+  90,
+  99,
+  105,
+  // 101,
+  // 105,
+]
+
+const TREASURE_PLAYER_IDS: number[] = [
+  27,
+  81,
+  59,
+  60,
+  118,
+  26,
+  278,
+  66,
+  42,
+  279,
+  53,
+  286,
+  46,
+  146,
+  76,
+  84,
+  // 203,
+  // 214,
+]
+
+const SUPERSTAR_PLAYER_IDS: number[] = [
+  81,
+  111,
+  283,
+  141,
+  104,
+  49,
+  115,
+  60,
+  69,
+  // 301,
+  // 308,
+]
+
+type PlayerHighlight = "jewel" | "treasure" | "superstar"
+
+function getPlayerHighlights(playerId: unknown): PlayerHighlight[] {
+  if (playerId === null || playerId === undefined) {
+    return []
+  }
+
+  const id = Number(playerId)
+  const highlights: PlayerHighlight[] = []
+
+  if (SUPERSTAR_PLAYER_IDS.includes(id)) {
+    highlights.push("superstar")
+  }
+
+  if (JEWEL_PLAYER_IDS.includes(id)) {
+    highlights.push("jewel")
+  }
+
+  if (TREASURE_PLAYER_IDS.includes(id)) {
+    highlights.push("treasure")
+  }
+
+  return highlights
+}
+
+function getRevealHighlight(
+  highlights: PlayerHighlight[],
+): PlayerHighlight | null {
+  if (highlights.includes("superstar")) return "superstar"
+  if (highlights.includes("jewel")) return "jewel"
+  if (highlights.includes("treasure")) return "treasure"
+  return null
+}
+
+function PlayerHighlightBadges({
+  highlights,
+}: {
+  highlights: PlayerHighlight[]
+}) {
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      {highlights.includes("superstar") && (
+        <Badge
+          className="shrink-0 rounded-full border border-yellow-300 bg-gradient-to-r from-amber-100 via-yellow-50 to-yellow-200 px-2.5 py-1 text-[10px] font-black tracking-wide text-amber-700 shadow-sm"
+        >
+          <Star className="mr-1 h-3 w-3 fill-amber-500 text-amber-500" />
+          SUPERSTAR
+        </Badge>
+      )}
+
+      {highlights.includes("jewel") && (
+        <Badge
+          className="shrink-0 rounded-full border border-yellow-300 bg-gradient-to-r from-yellow-100 via-yellow-50 to-amber-100 px-2.5 py-1 text-[10px] font-black tracking-wide text-yellow-700 shadow-sm"
+        >
+          <Gem className="mr-1 h-3 w-3" />
+          JEWEL
+        </Badge>
+      )}
+
+      {highlights.includes("treasure") && (
+        <Badge
+          className="shrink-0 rounded-full border border-slate-300 bg-gradient-to-r from-slate-100 via-white to-slate-200 px-2.5 py-1 text-[10px] font-black tracking-wide text-slate-600 shadow-sm"
+        >
+          <Medal className="mr-1 h-3 w-3" />
+          TREASURE
+        </Badge>
+      )}
+    </div>
+  )
+}
+
 export default function AuctionTab({ initialData }: AuctionTabProps) {
   const [selectedPlayer, setSelectedPlayer] = useState<any>(null)
   const [selectedTeam, setSelectedTeam] = useState("")
@@ -46,6 +182,7 @@ export default function AuctionTab({ initialData }: AuctionTabProps) {
   const [playersData, setPlayersData] = useState(initialData.players)
   const [isRecycling, setIsRecycling] = useState(false)
   const [currentPlayer, setCurrentPlayer] = useState<any | null>(null)
+  const [showReveal, setShowReveal] = useState(false)
   const [teams, setTeams] = useState(initialData.teams)
   const [assignments, setAssignments] = useState(initialData.assignments)
   const [isShuffling, setIsShuffling] = useState(false)
@@ -53,6 +190,34 @@ export default function AuctionTab({ initialData }: AuctionTabProps) {
   const [isPlayerPickerOpen, setIsPlayerPickerOpen] = useState(false)
   const [playerSearch, setPlayerSearch] = useState("")
   const playerPickerRef = useRef<HTMLDivElement | null>(null)
+
+  const playerHighlights = useMemo(
+    () => getPlayerHighlights(currentPlayer?.id),
+    [currentPlayer?.id],
+  )
+
+  const revealHighlight = useMemo(
+    () => getRevealHighlight(playerHighlights),
+    [playerHighlights],
+  )
+
+  // Trigger the reveal whenever the player ID changes.
+  // Superstar takes priority over Jewel, then Treasure.
+  useEffect(() => {
+    setShowReveal(false)
+
+    if (!currentPlayer?.id || !revealHighlight) {
+      return
+    }
+
+    setShowReveal(true)
+
+    const timer = window.setTimeout(() => {
+      setShowReveal(false)
+    }, HIGHLIGHT_DURATION_MS)
+
+    return () => window.clearTimeout(timer)
+  }, [currentPlayer?.id, revealHighlight])
 
   const availablePlayers = useMemo(
     () => playersData.filter((p) => p.status === "available"),
@@ -73,6 +238,7 @@ export default function AuctionTab({ initialData }: AuctionTabProps) {
 
     return availablePlayers.filter((player) => {
       const searchableText = [
+        player.auction_number?.toString(),
         player.name,
         player.position,
         player.city,
@@ -129,6 +295,7 @@ export default function AuctionTab({ initialData }: AuctionTabProps) {
         supabase
           .from("players")
           .select(`
+            auction_number,
             id,
             name,
             status,
@@ -577,8 +744,27 @@ export default function AuctionTab({ initialData }: AuctionTabProps) {
                       Current Player
                     </h3>
 
-                    <Card className="bg-gray-50 border border-gray-200 rounded-xl">
-                      <CardContent className="p-6">
+                    <Card className="relative bg-gray-50 border border-gray-200 rounded-xl">
+                      {showReveal && revealHighlight && (
+                        <div
+                          className="pointer-events-none absolute inset-0 z-30 overflow-hidden rounded-xl"
+                          aria-hidden="true"
+                        >
+                          {revealHighlight === "superstar" && (
+                            <SuperstarReveal durationMs={HIGHLIGHT_DURATION_MS} />
+                          )}
+
+                          {revealHighlight === "jewel" && (
+                            <JewelReveal durationMs={HIGHLIGHT_DURATION_MS} />
+                          )}
+
+                          {revealHighlight === "treasure" && (
+                            <TreasureReveal durationMs={HIGHLIGHT_DURATION_MS} />
+                          )}
+                        </div>
+                      )}
+
+                      <CardContent className="relative z-10 p-6">
                         <div className="flex items-start space-x-6 mb-6">
                           <div className="w-2/5 flex-shrink-0">
                             <img
@@ -594,17 +780,23 @@ export default function AuctionTab({ initialData }: AuctionTabProps) {
                           </div>
 
                           <div className="w-3/5 pl-6">
-                            <div className="flex items-center justify-between mb-2 gap-4">
-                              <div>
+                            <div className="flex items-start justify-between mb-2 gap-4">
+                              <div className="min-w-0">
                                 <h4 className="text-2xl font-bold text-gray-900">
                                   {currentPlayer.name}
                                 </h4>
                                 <p className="text-gray-500 font-medium">
                                   {currentPlayer.position}
                                 </p>
+
+                                {playerHighlights.length > 0 && (
+                                  <div className="mt-2">
+                                    <PlayerHighlightBadges highlights={playerHighlights} />
+                                  </div>
+                                )}
                               </div>
 
-                              <Badge className="bg-amber-500 text-white px-3 py-1 rounded-full font-medium whitespace-nowrap">
+                              <Badge className="shrink-0 bg-amber-500 text-white px-3 py-1 rounded-full font-medium whitespace-nowrap">
                                 Base: {formatCurrency(currentPlayer.base_price)}
                               </Badge>
                             </div>
@@ -663,7 +855,7 @@ export default function AuctionTab({ initialData }: AuctionTabProps) {
                             )}
                           </Button>
 
-                          <div className="relative flex-1" ref={playerPickerRef}>
+                          <div className="relative z-50 flex-1" ref={playerPickerRef}>
                             <Button
                               type="button"
                               onClick={() => setIsPlayerPickerOpen((open) => !open)}
@@ -700,16 +892,16 @@ export default function AuctionTab({ initialData }: AuctionTabProps) {
                                         <div className="flex items-center justify-between gap-3">
                                           <div className="min-w-0">
                                             <p className="font-medium text-gray-900 truncate">
-                                              {player.name}
+                                              {player.auction_number}. {player.name}
                                             </p>
                                             <p className="text-xs text-gray-500 truncate">
                                               {player.position || "Player"}
                                               {player.city ? ` • ${player.city}` : ""}
                                             </p>
                                           </div>
-                                          <span className="text-xs font-medium text-gray-500 whitespace-nowrap">
+                                          {/* <span className="text-xs font-medium text-gray-500 whitespace-nowrap">
                                             {formatCurrency(player.base_price)}
-                                          </span>
+                                          </span> */}
                                         </div>
                                       </button>
                                     ))
@@ -909,7 +1101,7 @@ export default function AuctionTab({ initialData }: AuctionTabProps) {
                           )}
                         </Button>
 
-                        <div className="relative flex-1" ref={playerPickerRef}>
+                        <div className="relative z-50 flex-1" ref={playerPickerRef}>
                           <Button
                             type="button"
                             onClick={() => setIsPlayerPickerOpen((open) => !open)}
@@ -946,16 +1138,16 @@ export default function AuctionTab({ initialData }: AuctionTabProps) {
                                       <div className="flex items-center justify-between gap-3">
                                         <div className="min-w-0">
                                           <p className="font-medium text-gray-900 truncate">
-                                            {player.name}
+                                            {player.auction_number}. {player.name}
                                           </p>
                                           <p className="text-xs text-gray-500 truncate">
                                             {player.position || "Player"}
                                             {player.city ? ` • ${player.city}` : ""}
                                           </p>
                                         </div>
-                                        <span className="text-xs font-medium text-gray-500 whitespace-nowrap">
+                                        {/* <span className="text-xs font-medium text-gray-500 whitespace-nowrap">
                                           {formatCurrency(player.base_price)}
-                                        </span>
+                                        </span> */}
                                       </div>
                                     </button>
                                   ))
