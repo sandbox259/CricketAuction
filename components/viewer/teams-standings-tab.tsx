@@ -130,30 +130,71 @@ export default function TeamsStandingsTab({
   })
 
   // Copy before sorting so we don't mutate filteredTeams.
+  // const sortedTeams = [...filteredTeams].sort((a, b) => {
+  //   if (sortBy === "spent") {
+  //     return (
+  //       (b.total_spent || 0) -
+  //       (a.total_spent || 0)
+  //     )
+  //   }
+
+  //   if (sortBy === "remaining") {
+  //     return (
+  //       (b.budget || 0) -
+  //       (a.budget || 0)
+  //     )
+  //   }
+
+  //   if (sortBy === "squad") {
+  //     return (
+  //       (b.players_count || 0) -
+  //       (a.players_count || 0)
+  //     )
+  //   }
+
+  //   return 0
+  // })
+
   const sortedTeams = [...filteredTeams].sort((a, b) => {
-    if (sortBy === "spent") {
-      return (
-        (b.total_spent || 0) -
-        (a.total_spent || 0)
-      )
-    }
+  const aIsReserves =
+    a.team_name?.trim().toLowerCase() === "reserves"
 
-    if (sortBy === "remaining") {
-      return (
-        (b.budget || 0) -
-        (a.budget || 0)
-      )
-    }
+  const bIsReserves =
+    b.team_name?.trim().toLowerCase() === "reserves"
 
-    if (sortBy === "squad") {
-      return (
-        (b.players_count || 0) -
-        (a.players_count || 0)
-      )
-    }
+  // Always keep Reserves at the very bottom
+  if (aIsReserves && !bIsReserves) {
+    return 1
+  }
 
-    return 0
-  })
+  if (!aIsReserves && bIsReserves) {
+    return -1
+  }
+
+  // Normal sorting for all other teams
+  if (sortBy === "spent") {
+    return (
+      (b.total_spent || 0) -
+      (a.total_spent || 0)
+    )
+  }
+
+  if (sortBy === "remaining") {
+    return (
+      (b.budget || 0) -
+      (a.budget || 0)
+    )
+  }
+
+  if (sortBy === "squad") {
+    return (
+      (b.players_count || 0) -
+      (a.players_count || 0)
+    )
+  }
+
+  return 0
+})
 
   // ---------------------------------------------------------
   // EXPAND / COLLAPSE PLAYERS

@@ -131,6 +131,12 @@ export default function ViewerDashboard({
 }: ViewerDashboardProps) {
   const [activeTab, setActiveTab] = useState("live")
 
+  const handleTabChange = (tab: string) => {
+  setActiveTab(tab)
+
+  window.scrollTo(0, 0)
+}
+
   const { data, isConnected, lastUpdate } =
     useRealtimeAuction(initialData)
 
@@ -163,7 +169,7 @@ export default function ViewerDashboard({
     },
     {
       key: "sales",
-      label: "Sales",
+      label: "Deals",
       Icon: ShoppingBag,
     },
     {
@@ -637,7 +643,7 @@ export default function ViewerDashboard({
       >
         <Tabs
           value={activeTab}
-          onValueChange={setActiveTab}
+          onValueChange={handleTabChange}
           className="w-full space-y-4"
         >
           {/* Live */}
@@ -874,7 +880,7 @@ export default function ViewerDashboard({
                 key={key}
                 type="button"
                 aria-label={`${label} tab`}
-                onClick={() => setActiveTab(key)}
+                onClick={() => handleTabChange(key)}
                 className={`
                   flex
                   min-w-0
