@@ -39,7 +39,7 @@ type TeamRow = {
   name: string
   budget?: number
   team_logo?: string
-  is_pune?: boolean
+  is_pune?: number
   [key: string]: any
 }
 

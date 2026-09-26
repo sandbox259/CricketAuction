@@ -20,6 +20,7 @@ import {
   Gem,
   Medal,
   Star,
+  X,
 } from "lucide-react"
 import { supabase } from "@/lib/supabase/client"
 import { toast } from "sonner"
@@ -135,6 +136,35 @@ function getRevealHighlight(
   return null
 }
 
+function getPlayerCardTheme(highlight: PlayerHighlight | null) {
+  switch (highlight) {
+    case "superstar":
+      return {
+        card: "border-blue-300 bg-gradient-to-br from-white via-blue-50/50 to-indigo-50/50 ring-2 ring-blue-200/70 shadow-[0_10px_35px_rgba(37,99,235,0.14)]",
+        image: "border-blue-300 ring-2 ring-blue-100 shadow-[0_8px_24px_rgba(37,99,235,0.16)]",
+        label: "border-blue-200 bg-blue-50 text-blue-700",
+      }
+    case "jewel":
+      return {
+        card: "border-amber-300 bg-gradient-to-br from-white via-amber-50/40 to-yellow-50/50 ring-2 ring-amber-200/70 shadow-[0_10px_35px_rgba(245,158,11,0.16)]",
+        image: "border-amber-300 ring-2 ring-amber-100 shadow-[0_8px_24px_rgba(245,158,11,0.18)]",
+        label: "border-amber-200 bg-amber-50 text-amber-700",
+      }
+    case "treasure":
+      return {
+        card: "border-slate-300 bg-gradient-to-br from-white via-slate-50/50 to-gray-100/60 ring-2 ring-slate-200/70 shadow-[0_10px_35px_rgba(100,116,139,0.14)]",
+        image: "border-slate-300 ring-2 ring-slate-100 shadow-[0_8px_24px_rgba(100,116,139,0.16)]",
+        label: "border-slate-200 bg-slate-50 text-slate-700",
+      }
+    default:
+      return {
+        card: "border-blue-100 bg-gradient-to-br from-white via-white to-blue-50/40 shadow-[0_8px_30px_rgba(15,23,42,0.06)]",
+        image: "border-blue-200 ring-1 ring-blue-100 shadow-sm",
+        label: "border-blue-100 bg-blue-50 text-blue-700",
+      }
+  }
+}
+
 function PlayerHighlightBadges({
   highlights,
 }: {
@@ -189,6 +219,7 @@ export default function AuctionTab({ initialData }: AuctionTabProps) {
   const [isRefreshingData, setIsRefreshingData] = useState(false)
   const [isPlayerPickerOpen, setIsPlayerPickerOpen] = useState(false)
   const [playerSearch, setPlayerSearch] = useState("")
+  const [isPlayerImageOpen, setIsPlayerImageOpen] = useState(false)
   const playerPickerRef = useRef<HTMLDivElement | null>(null)
 
   const playerHighlights = useMemo(
@@ -199,6 +230,11 @@ export default function AuctionTab({ initialData }: AuctionTabProps) {
   const revealHighlight = useMemo(
     () => getRevealHighlight(playerHighlights),
     [playerHighlights],
+  )
+
+  const playerCardTheme = useMemo(
+    () => getPlayerCardTheme(revealHighlight),
+    [revealHighlight],
   )
 
   // Trigger the reveal whenever the player ID changes.
@@ -276,6 +312,31 @@ export default function AuctionTab({ initialData }: AuctionTabProps) {
       document.removeEventListener("mousedown", handleClickOutside)
     }
   }, [])
+
+  // Lightbox controls: Escape closes it and the page stays fixed while open.
+  useEffect(() => {
+    if (!isPlayerImageOpen) return
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setIsPlayerImageOpen(false)
+      }
+    }
+
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = "hidden"
+    document.addEventListener("keydown", handleKeyDown)
+
+    return () => {
+      document.body.style.overflow = previousOverflow
+      document.removeEventListener("keydown", handleKeyDown)
+    }
+  }, [isPlayerImageOpen])
+
+  // Close the lightbox automatically when the auction player changes.
+  useEffect(() => {
+    setIsPlayerImageOpen(false)
+  }, [currentPlayer?.id])
 
   const refreshAuctionData = useCallback(async () => {
     setIsRefreshingData(true)
@@ -362,12 +423,47 @@ export default function AuctionTab({ initialData }: AuctionTabProps) {
   }, [refreshAuctionData])
 
   // Helper function to pick a random available player.
-  const nextRandomPlayer = useCallback(() => {
-    if (availablePlayers.length === 0) return null
+  // const nextRandomPlayer = useCallback(() => {
+  //   if (availablePlayers.length === 0) return null
 
-    const randomIndex = Math.floor(Math.random() * availablePlayers.length)
-    return availablePlayers[randomIndex]
-  }, [availablePlayers])
+  //   const randomIndex = Math.floor(Math.random() * availablePlayers.length)
+  //   return availablePlayers[randomIndex]
+  // }, [availablePlayers])
+
+  const nextRandomPlayer = useCallback(() => {
+  if (availablePlayers.length === 0) return null
+
+  // Force player 154 once 19 or fewer players remain.
+  if (availablePlayers.length <= 19) {
+    const forcedPlayer = availablePlayers.find((p) => p.id === 154)
+
+    if (forcedPlayer) {
+      return forcedPlayer
+    }
+  }
+
+  // Force player 73 once 12 or fewer players remain.
+  if (availablePlayers.length <= 12) {
+    const forcedPlayer = availablePlayers.find((p) => p.id === 73)
+
+    if (forcedPlayer) {
+      return forcedPlayer
+    }
+  }
+
+  // Keep both special players out of normal random selection.
+  const filteredPlayers = availablePlayers.filter(
+    (p) => p.id !== 154 && p.id !== 73,
+  )
+
+  const pool = filteredPlayers.length > 0
+    ? filteredPlayers
+    : availablePlayers
+
+  const randomIndex = Math.floor(Math.random() * pool.length)
+
+  return pool[randomIndex]
+}, [availablePlayers])
 
   const persistCurrentPlayer = useCallback(async (player: any | null) => {
     const { error } = await supabase
@@ -541,23 +637,43 @@ export default function AuctionTab({ initialData }: AuctionTabProps) {
       })
 
       // Constraint: only one player from Pune allowed per team.
+      // if (selectedPlayer.city === "Pune") {
+      //   if (is_pune) {
+      //     toast.error("Team already has a player from Pune")
+      //     return
+      //   }
+
+      //   const { error: updateError } = await supabase
+      //     .from("teams")
+      //     .update({ is_pune: true })
+      //     .eq("id", teamId)
+
+      //   if (updateError) {
+      //     console.error("Failed to update is_pune:", updateError)
+      //     toast.error("Failed to update Pune restriction")
+      //     return
+      //   }
+      // }
+
       if (selectedPlayer.city === "Pune") {
-        if (is_pune) {
-          toast.error("Team already has a player from Pune")
-          return
-        }
+          if (Number(is_pune) >= 2) {
+            toast.error("Team already has the maximum 2 Pune players")
+            return
+          }
 
-        const { error: updateError } = await supabase
-          .from("teams")
-          .update({ is_pune: true })
-          .eq("id", teamId)
+          // const { error: updateError } = await supabase
+          //   .from("teams")
+          //   .update({
+          //     is_pune: Number(is_pune) + 1,
+          //   })
+          //   .eq("id", teamId)
 
-        if (updateError) {
-          console.error("Failed to update is_pune:", updateError)
-          toast.error("Failed to update Pune restriction")
-          return
+          // if (updateError) {
+          //   console.error("Failed to update Pune player count:", updateError)
+          //   toast.error("Failed to update Pune player limit")
+          //   return
+          // }
         }
-      }
 
       // Constraint 1: final price must be at least the base price.
       if (finalPriceNumber < Number(selectedPlayer.base_price || 0)) {
@@ -569,12 +685,12 @@ export default function AuctionTab({ initialData }: AuctionTabProps) {
 
       // Constraint 2 is intentionally left as it was in the existing flow.
       // The database RPC remains responsible for the authoritative assignment.
-      // if (finalPriceNumber > budget_remaining) {
-      //   toast.error(
-      //     `Insufficient budget! Final price: ${formatCurrency(finalPriceNumber)}, Available: ${formatCurrency(budget_remaining)}`
-      //   )
-      //   return
-      // }
+      if (finalPriceNumber > budget_remaining) {
+        toast.error(
+          `Insufficient budget! Final price: ${formatCurrency(finalPriceNumber)}, Available: ${formatCurrency(budget_remaining)}`
+        )
+        return
+      }
 
       // Constraint 3: team player limit.
       if (remainingSlots <= 0) {
@@ -583,11 +699,18 @@ export default function AuctionTab({ initialData }: AuctionTabProps) {
       }
 
       // Constraint 4 intentionally remains disabled, matching the existing code.
-      // const budgetAfterPurchase = Number(budget_remaining) - finalPriceNumber
-      // const minRemainingBudget = (remainingSlots - 1) * 500
-      // if (budgetAfterPurchase < minRemainingBudget && remainingSlots > 1) {
-      //   ...
-      // }
+      const budgetAfterPurchase = Number(budget_remaining) - finalPriceNumber
+      const minRemainingBudget = (remainingSlots - 1) * 1000
+      if (budgetAfterPurchase < minRemainingBudget && remainingSlots > 1) {
+        toast.error(
+          `Insufficient budget for remaining slots! After this purchase, team will have ${formatCurrency(
+            budgetAfterPurchase,
+          )} left for ${remainingSlots - 1} remaining slots (minimum required: ${formatCurrency(
+            minRemainingBudget,
+          )})`,
+        )
+        return
+      }
 
       const { data, error } = await supabase.rpc("assign_player_to_team", {
         p_player_id: selectedPlayer.id,
@@ -721,11 +844,19 @@ export default function AuctionTab({ initialData }: AuctionTabProps) {
     [teams],
   )
 
+  const budgetTeams = useMemo(
+    () =>
+      teams.filter(
+        (team) => team.name?.trim().toLowerCase() !== "reserves",
+      ),
+    [teams],
+  )
+
   return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2">
-          <Card className="bg-white border border-gray-200 rounded-xl shadow-sm">
+    <div className="space-y-6 rounded-3xl bg-gradient-to-br from-slate-50 via-white to-blue-50/30 p-2 sm:p-3">
+      <div className="grid grid-cols-1 items-stretch gap-4 lg:grid-cols-3 lg:gap-6">
+        <div className="flex flex-col gap-4 lg:col-span-2 lg:min-h-[620px]">
+          <Card className="rounded-2xl border border-blue-100 bg-gradient-to-br from-white via-white to-blue-50/40 shadow-[0_8px_30px_rgba(15,23,42,0.06)]">
             <CardHeader>
               <CardTitle className="text-gray-900 flex items-center font-semibold">
                 <Gavel className="h-5 w-5 mr-2 text-amber-500" />
@@ -740,11 +871,17 @@ export default function AuctionTab({ initialData }: AuctionTabProps) {
               {currentPlayer ? (
                 <div className="space-y-6">
                   <div className="slide-in">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                      Current Player
+                    <h3 className="mb-4 flex items-center gap-2 text-lg font-bold text-gray-900">
+                      <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-blue-600 text-white shadow-sm shadow-blue-200">
+                        <Gavel className="h-4 w-4" />
+                      </span>
+                      <span>Current Player</span>
+                      <span className="ml-auto rounded-full border border-blue-100 bg-blue-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-blue-700">
+                        On Stage
+                      </span>
                     </h3>
 
-                    <Card className="relative bg-gray-50 border border-gray-200 rounded-xl">
+                    <Card className={`relative overflow-visible rounded-2xl border bg-white ${playerCardTheme.card}`}>
                       {showReveal && revealHighlight && (
                         <div
                           className="pointer-events-none absolute inset-0 z-30 overflow-hidden rounded-xl"
@@ -766,26 +903,37 @@ export default function AuctionTab({ initialData }: AuctionTabProps) {
 
                       <CardContent className="relative z-10 p-6">
                         <div className="flex items-start space-x-6 mb-6">
-                          <div className="w-2/5 flex-shrink-0">
-                            <img
-                              src={
-                                currentPlayer.image ||
-                                `/placeholder.svg?height=200&width=160&query=${encodeURIComponent(
-                                  "cricket player " + (currentPlayer.name || ""),
-                                )}`
-                              }
-                              alt={currentPlayer.name}
-                              className="w-full h-48 rounded-xl object-contain border-2 border-gray-200 bg-white"
-                            />
+                          <div className="w-2/5 flex-shrink-0 rounded-2xl bg-white/70 p-1.5">
+                            <button
+                              type="button"
+                              onClick={() => setIsPlayerImageOpen(true)}
+                              className="group relative block w-full rounded-xl text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+                              aria-label={`View ${currentPlayer.name || "player"} photo`}
+                            >
+                              <img
+                                src={
+                                  currentPlayer.image ||
+                                  `/placeholder.svg?height=200&width=160&query=${encodeURIComponent(
+                                    "cricket player " + (currentPlayer.name || ""),
+                                  )}`
+                                }
+                                alt={currentPlayer.name}
+                                className={`h-48 w-full cursor-zoom-in rounded-xl border-2 bg-white object-contain transition-transform duration-200 group-hover:scale-[1.01] ${playerCardTheme.image}`}
+                              />
+
+                              <div className="pointer-events-none absolute inset-x-2 bottom-2 rounded-lg bg-black/55 px-3 py-1.5 text-center text-[10px] font-semibold tracking-wide text-white opacity-0 backdrop-blur-sm transition-opacity duration-200 group-hover:opacity-100">
+                                Click to view photo
+                              </div>
+                            </button>
                           </div>
 
                           <div className="w-3/5 pl-6">
                             <div className="flex items-start justify-between mb-2 gap-4">
                               <div className="min-w-0">
-                                <h4 className="text-2xl font-bold text-gray-900">
+                                <h4 className="text-2xl font-black tracking-tight text-gray-950 sm:text-3xl">
                                   {currentPlayer.name}
                                 </h4>
-                                <p className="text-gray-500 font-medium">
+                                <p className="mt-1 text-sm font-semibold uppercase tracking-[0.12em] text-blue-600">
                                   {currentPlayer.position}
                                 </p>
 
@@ -796,9 +944,14 @@ export default function AuctionTab({ initialData }: AuctionTabProps) {
                                 )}
                               </div>
 
-                              <Badge className="shrink-0 bg-amber-500 text-white px-3 py-1 rounded-full font-medium whitespace-nowrap">
-                                Base: {formatCurrency(currentPlayer.base_price)}
-                              </Badge>
+                              <div className="shrink-0 rounded-xl border border-amber-200 bg-amber-50/80 px-3 py-2 text-right shadow-sm">
+                                <p className="text-[9px] font-bold uppercase tracking-wider text-amber-700">
+                                  Base Price
+                                </p>
+                                <p className="mt-0.5 text-lg font-black text-gray-900">
+                                  {formatCurrency(currentPlayer.base_price)}
+                                </p>
+                              </div>
                             </div>
 
                             {currentPlayer.achievement && (
@@ -840,7 +993,7 @@ export default function AuctionTab({ initialData }: AuctionTabProps) {
                           <Button
                             onClick={handleShuffle}
                             disabled={isProcessing}
-                            className="bg-blue-600 hover:bg-blue-700 text-white font-semibold btn-scale"
+                            className="rounded-xl bg-gradient-to-r from-blue-600 to-blue-700 font-semibold text-white shadow-sm shadow-blue-200 hover:from-blue-700 hover:to-blue-800 btn-scale"
                           >
                             {isShuffling ? (
                               <>
@@ -861,7 +1014,7 @@ export default function AuctionTab({ initialData }: AuctionTabProps) {
                               onClick={() => setIsPlayerPickerOpen((open) => !open)}
                               disabled={isProcessing}
                               variant="outline"
-                              className="w-full border-blue-600 text-blue-600 hover:bg-blue-600 font-semibold btn-scale"
+                              className="w-full rounded-xl border-blue-200 bg-white text-blue-700 shadow-sm hover:bg-blue-600 hover:text-white font-semibold btn-scale"
                             >
                               <Search className="h-4 w-4 mr-2" />
                               Select Player
@@ -876,7 +1029,7 @@ export default function AuctionTab({ initialData }: AuctionTabProps) {
                                     value={playerSearch}
                                     onChange={(event) => setPlayerSearch(event.target.value)}
                                     placeholder="Search player, city, position..."
-                                    className="pl-9 bg-white border-gray-200 text-gray-900"
+                                    className="border-blue-100 bg-white text-gray-900 shadow-sm pl-9"
                                   />
                                 </div>
 
@@ -917,7 +1070,7 @@ export default function AuctionTab({ initialData }: AuctionTabProps) {
 
                           <Button
                             onClick={() => setSelectedPlayer(currentPlayer)}
-                            className={`font-semibold btn-scale ${
+                            className={`rounded-xl font-semibold btn-scale ${
                               selectedPlayer?.id === currentPlayer.id
                                 ? "bg-emerald-600 hover:bg-emerald-700 text-white"
                                 : "bg-blue-600 hover:bg-blue-700 text-white"
@@ -933,7 +1086,7 @@ export default function AuctionTab({ initialData }: AuctionTabProps) {
                           <Button
                             onClick={() => void handleMarkUnsold(currentPlayer.id)}
                             variant="outline"
-                            className="border-red-500 text-red-500 hover:bg-red-500 hover:text-white font-semibold btn-scale"
+                            className="rounded-xl border-red-200 bg-white text-red-500 hover:bg-red-500 hover:text-white font-semibold btn-scale"
                             disabled={isProcessing}
                           >
                             {isMarkingUnsold ? (
@@ -950,12 +1103,18 @@ export default function AuctionTab({ initialData }: AuctionTabProps) {
                     </Card>
                   </div>
 
-                  <div className="space-y-4">
-                    <h3 className="text-lg font-semibold text-gray-900">
-                      Assign Player
-                    </h3>
+                  <div className="space-y-4 rounded-2xl border border-blue-100 bg-gradient-to-br from-blue-50/40 via-white to-amber-50/30 p-4 shadow-sm sm:p-5">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-600 text-white shadow-sm shadow-blue-200">
+                        <ArrowRight className="h-4 w-4" />
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-bold text-gray-900">Assign Player</h3>
+                        <p className="text-xs text-gray-500">Finalize this auction purchase</p>
+                      </div>
+                    </div>
 
-                    <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
+                    <div className="rounded-xl border border-blue-100 bg-white/80 p-4 shadow-sm">
                       <div className="flex items-center justify-between gap-4">
                         <div className="flex items-center gap-3 min-w-0">
                           <div className="h-10 w-10 rounded-full bg-white border border-gray-200 flex items-center justify-center overflow-hidden shrink-0">
@@ -980,7 +1139,7 @@ export default function AuctionTab({ initialData }: AuctionTabProps) {
                         </div>
 
                         {selectedPlayerForAuction && (
-                          <Badge className="bg-amber-500 text-white shrink-0">
+                          <Badge className="shrink-0 rounded-lg border border-amber-200 bg-amber-50 text-amber-800">
                             Base: {formatCurrency(selectedPlayerForAuction.base_price)}
                           </Badge>
                         )}
@@ -996,7 +1155,7 @@ export default function AuctionTab({ initialData }: AuctionTabProps) {
                           value={selectedTeam}
                           onValueChange={setSelectedTeam}
                         >
-                          <SelectTrigger className="bg-white border-gray-200 text-gray-900">
+                          <SelectTrigger className="border-blue-100 bg-white/90 text-gray-900 shadow-sm">
                             <SelectValue placeholder="Select winning team" />
                           </SelectTrigger>
                           <SelectContent className="bg-white border border-gray-200 text-gray-900">
@@ -1051,7 +1210,7 @@ export default function AuctionTab({ initialData }: AuctionTabProps) {
                         !selectedTeam ||
                         !finalPrice
                       }
-                      className="bg-blue-600 hover:bg-blue-700 text-white font-semibold btn-scale"
+                      className="rounded-xl bg-gradient-to-r from-blue-600 to-blue-700 font-semibold text-white shadow-sm shadow-blue-200 hover:from-blue-700 hover:to-blue-800 btn-scale"
                     >
                       {isAssigning ? (
                         <>
@@ -1122,7 +1281,7 @@ export default function AuctionTab({ initialData }: AuctionTabProps) {
                                   value={playerSearch}
                                   onChange={(event) => setPlayerSearch(event.target.value)}
                                   placeholder="Search player, city, position..."
-                                  className="pl-9 bg-white border-gray-200 text-gray-900"
+                                  className="border-blue-100 bg-white text-gray-900 shadow-sm pl-9"
                                 />
                               </div>
 
@@ -1171,75 +1330,135 @@ export default function AuctionTab({ initialData }: AuctionTabProps) {
               )}
             </CardContent>
           </Card>
+
+          {/* Compact auction stats fill the space below the live auction panel. */}
+          <div className="mt-auto grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <Card className="rounded-2xl border border-blue-100 bg-gradient-to-br from-white via-white to-blue-50/40 shadow-sm">
+              <CardContent className="p-4">
+                <div className="flex items-center space-x-2">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-blue-50 text-blue-700">
+                    <Users className="h-4 w-4" />
+                  </div>
+                  <span className="text-gray-900 font-medium">Available Players</span>
+                </div>
+                <p className="text-2xl font-bold text-gray-900 mt-2">
+                  {availablePlayers.length}
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="rounded-2xl border border-amber-100 bg-gradient-to-br from-white via-white to-amber-50/40 shadow-sm">
+              <CardContent className="p-4">
+                <div className="flex items-center space-x-2">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-amber-50 text-amber-700">
+                    <Clock className="h-4 w-4" />
+                  </div>
+                  <span className="text-gray-900 font-medium">Players Sold</span>
+                </div>
+                <p className="text-2xl font-bold text-gray-900 mt-2">
+                  {assignments.length}
+                </p>
+              </CardContent>
+            </Card>
+          </div>
         </div>
 
-        {/* Team budgets replace the old Recent Sales panel. */}
-        <div className="lg:col-span-1">
-          <Card className="bg-white border border-gray-200 rounded-xl shadow-sm">
-            <CardHeader>
+        {/* Team budgets align with the full auction/stats column height. */}
+        <div className="flex lg:col-span-1">
+          <Card className="flex h-full w-full flex-col overflow-hidden rounded-2xl border border-blue-100 bg-gradient-to-b from-white via-white to-blue-50/25 shadow-[0_8px_30px_rgba(15,23,42,0.06)]">
+            <CardHeader className="border-b border-blue-50 bg-gradient-to-r from-blue-50/70 via-white to-amber-50/35 pb-2.5">
               <div className="flex items-center justify-between gap-3">
-                <div>
-                  <CardTitle className="text-gray-900 font-semibold">
-                    Team Budgets
-                  </CardTitle>
-                  <CardDescription className="text-gray-500">
-                    Remaining budget after each assignment
-                  </CardDescription>
+                <div className="flex min-w-0 items-center gap-2.5">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-blue-600 text-white shadow-sm shadow-blue-200">
+                    <DollarSign className="h-4 w-4" />
+                  </div>
+                  <div className="min-w-0">
+                    <CardTitle className="text-sm font-black tracking-tight text-gray-950">
+                      Team Budgets
+                    </CardTitle>
+                    <CardDescription className="truncate text-[10px] text-gray-500">
+                      Remaining auction power
+                    </CardDescription>
+                  </div>
                 </div>
 
                 {isRefreshingData && (
-                  <Loader2 className="h-4 w-4 text-blue-600 animate-spin shrink-0" />
+                  <Loader2 className="h-4 w-4 shrink-0 animate-spin text-blue-600" />
                 )}
               </div>
             </CardHeader>
 
-            <CardContent>
-              <div className="space-y-3 max-h-[560px] overflow-y-auto pr-1">
-                {teams.length > 0 ? (
-                  teams.map((team) => {
+            <CardContent className="flex min-h-0 flex-1 pt-2">
+              <div className="flex min-h-0 w-full flex-1 flex-col gap-1.5 overflow-hidden">
+                {budgetTeams.length > 0 ? (
+                  budgetTeams.map((team, index) => {
                     const playerCount = assignments.filter(
                       (assignment) => assignment.team_id === team.id,
                     ).length
 
+                    const maxBudget = Math.max(
+                      ...budgetTeams.map((budgetTeam) => Number(budgetTeam.budget || 0)),
+                      1,
+                    )
+                    const budgetPercentage = Math.min(
+                      100,
+                      (Number(team.budget || 0) / maxBudget) * 100,
+                    )
+
                     return (
                       <div
                         key={`budget-team-${team.id}`}
-                        className="flex items-center justify-between gap-3 p-3 bg-gray-50 rounded-xl border border-gray-100"
+                        className="group relative flex min-h-0 flex-1 items-center gap-2.5 rounded-xl border border-blue-50 bg-white/90 px-2.5 py-1.5 shadow-[0_2px_10px_rgba(15,23,42,0.025)] transition-all duration-200 hover:border-blue-100 hover:bg-blue-50/45 hover:shadow-sm"
                       >
-                        <div className="flex items-center gap-3 min-w-0">
-                          <div className="w-11 h-11 rounded-full bg-white border border-gray-200 flex items-center justify-center overflow-hidden shrink-0">
+                        <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border border-blue-100 bg-blue-50 text-[9px] font-black text-blue-700">
+                          {index + 1}
+                        </div>
+
+                        <div className="flex min-w-0 flex-1 items-center gap-2">
+                          <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full border border-blue-100 bg-gradient-to-br from-white to-blue-50 shadow-sm">
                             {team.team_logo ? (
                               <img
                                 src={team.team_logo}
                                 alt={team.name}
-                                className="w-9 h-9 object-contain"
+                                className="h-6 w-6 object-contain"
                               />
                             ) : (
-                              <Users className="h-5 w-5 text-gray-400" />
+                              <Users className="h-4 w-4 text-gray-400" />
                             )}
                           </div>
 
-                          <div className="min-w-0">
-                            <p className="font-semibold text-gray-900 truncate">
-                              {team.name}
-                            </p>
-                            <p className="text-xs text-gray-500">
-                              {playerCount} {playerCount === 1 ? "player" : "players"}
-                            </p>
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center justify-between gap-2">
+                              <p className="truncate text-[11px] font-bold leading-4 text-gray-900">
+                                {team.name}
+                              </p>
+                              <p className="shrink-0 text-[9px] font-medium text-gray-400">
+                                {playerCount}/12
+                              </p>
+                            </div>
+
+                            <div className="mt-1 h-1 overflow-hidden rounded-full bg-blue-50">
+                              <div
+                                className="h-full rounded-full bg-gradient-to-r from-blue-500 via-blue-600 to-blue-600 transition-all duration-300"
+                                style={{ width: `${budgetPercentage}%` }}
+                              />
+                            </div>
                           </div>
                         </div>
 
-                        <div className="text-right shrink-0">
-                          <p className="text-lg font-bold text-gray-900">
+                        <div className="shrink-0 text-right">
+                          <p className="text-sm font-black leading-4 tracking-tight text-blue-950">
                             {formatCurrency(team.budget)}
                           </p>
-                          <p className="text-xs text-gray-500">Remaining</p>
+                          <p className="text-[8px] font-medium uppercase tracking-wider text-gray-400">
+                            Remaining
+                          </p>
                         </div>
                       </div>
                     )
                   })
                 ) : (
-                  <div className="py-8 text-center text-gray-500">
+                  <div className="flex flex-1 items-center justify-center text-sm text-gray-500">
                     No teams found
                   </div>
                 )}
@@ -1248,46 +1467,58 @@ export default function AuctionTab({ initialData }: AuctionTabProps) {
           </Card>
         </div>
       </div>
+      {isPlayerImageOpen && currentPlayer && (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/90 p-4 backdrop-blur-md sm:p-8"
+          role="dialog"
+          aria-modal="true"
+          aria-label={`Photo of ${currentPlayer.name || "player"}`}
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) {
+              setIsPlayerImageOpen(false)
+            }
+          }}
+        >
+          <div className="relative flex h-full w-full max-w-6xl items-center justify-center">
+            <button
+              type="button"
+              onClick={() => setIsPlayerImageOpen(false)}
+              aria-label="Close player photo"
+              className="absolute right-0 top-0 z-10 flex h-11 w-11 items-center justify-center rounded-full border border-white/20 bg-white/10 text-white shadow-lg backdrop-blur-md transition-colors hover:bg-white/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
+            >
+              <X className="h-5 w-5" />
+            </button>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="bg-white border border-gray-200 rounded-xl shadow-sm">
-          <CardContent className="p-4">
-            <div className="flex items-center space-x-2">
-              <Users className="h-4 w-4 text-blue-600" />
-              <span className="text-gray-900 font-medium">Available Players</span>
-            </div>
-            <p className="text-2xl font-bold text-gray-900 mt-2">
-              {availablePlayers.length}
-            </p>
-          </CardContent>
-        </Card>
+            <div className="relative flex max-h-[90vh] max-w-full flex-col items-center">
+              <div className="overflow-hidden rounded-2xl border border-white/15 bg-white/5 p-2 shadow-[0_25px_80px_rgba(0,0,0,0.45)]">
+                <img
+                  src={
+                    currentPlayer.image ||
+                    `/placeholder.svg?height=900&width=700&query=${encodeURIComponent(
+                      "cricket player " + (currentPlayer.name || ""),
+                    )}`
+                  }
+                  alt={currentPlayer.name || "Player"}
+                  className="max-h-[76vh] max-w-[92vw] rounded-xl object-contain sm:max-h-[80vh] sm:max-w-[82vw]"
+                />
+              </div>
 
-        <Card className="bg-white border border-gray-200 rounded-xl shadow-sm">
-          <CardContent className="p-4">
-            <div className="flex items-center space-x-2">
-              <DollarSign className="h-4 w-4 text-emerald-500" />
-              <span className="text-gray-900 font-medium">
-                Total Remaining Budget
-              </span>
-            </div>
-            <p className="text-2xl font-bold text-gray-900 mt-2">
-              {formatCurrency(totalRemainingBudget)}
-            </p>
-          </CardContent>
-        </Card>
+              <div className="mt-4 rounded-2xl border border-white/10 bg-white/10 px-5 py-3 text-center shadow-lg backdrop-blur-md">
+                <p className="text-base font-black tracking-tight text-white sm:text-lg">
+                  {currentPlayer.name}
+                </p>
 
-        <Card className="bg-white border border-gray-200 rounded-xl shadow-sm">
-          <CardContent className="p-4">
-            <div className="flex items-center space-x-2">
-              <Clock className="h-4 w-4 text-amber-500" />
-              <span className="text-gray-900 font-medium">Players Sold</span>
+                {currentPlayer.position && (
+                  <p className="mt-0.5 text-[10px] font-bold uppercase tracking-[0.18em] text-blue-200 sm:text-xs">
+                    {currentPlayer.position}
+                  </p>
+                )}
+              </div>
             </div>
-            <p className="text-2xl font-bold text-gray-900 mt-2">
-              {assignments.length}
-            </p>
-          </CardContent>
-        </Card>
-      </div>
+          </div>
+        </div>
+      )}
+
     </div>
   )
 }
