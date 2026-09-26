@@ -14,6 +14,7 @@ import TeamsTab from "./teams-tab"
 import AuctionTab from "./auction-tab"
 import UsersTab from "./users-tab"
 import AuditTab from "./audit-tab"
+import RulesTab from "./rules-tab"
 
 interface AdminDashboardProps {
   user: any
@@ -68,7 +69,7 @@ export default function AdminDashboard({ user, initialData }: AdminDashboardProp
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-6 bg-white border border-gray-200 shadow-sm">
+          <TabsList className="grid w-full grid-cols-7 bg-white border border-gray-200 shadow-sm">
             <TabsTrigger value="overview" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
               Overview
             </TabsTrigger>
@@ -83,6 +84,9 @@ export default function AdminDashboard({ user, initialData }: AdminDashboardProp
             </TabsTrigger>
             <TabsTrigger value="users" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
               Users
+            </TabsTrigger>
+            <TabsTrigger value="rules" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
+              Rules
             </TabsTrigger>
             <TabsTrigger value="audit" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
               Audit
@@ -194,6 +198,10 @@ export default function AdminDashboard({ user, initialData }: AdminDashboardProp
 
           <TabsContent value="users">
             <UsersTab initialUsers={initialData.users} teams={data.teams} />
+          </TabsContent>
+
+          <TabsContent value="rules">
+            <RulesTab />
           </TabsContent>
 
           <TabsContent value="audit">

@@ -13,6 +13,9 @@ import {
   ShoppingBag,
   Star,
   Copyright,
+  FileText,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react"
 import { signOut } from "@/lib/actions"
 import { useRealtimeAuction } from "@/hooks/use-realtime-auction"
@@ -20,6 +23,7 @@ import LiveAuctionTab from "./live-auction-tab"
 import PlayersListTab from "./players-list-tab"
 import TeamsStandingsTab from "./teams-standings-tab"
 import RecentSalesTab from "./recent-sales-tab"
+import RulesTab from "./rules-tab"
 
 interface ViewerDashboardProps {
   user?: any
@@ -161,6 +165,11 @@ export default function ViewerDashboard({
       key: "sales",
       label: "Sales",
       Icon: ShoppingBag,
+    },
+    {
+      key: "rules",
+      label: "Rules",
+      Icon: FileText,
     },
     {
       key: "sponsors",
@@ -678,6 +687,14 @@ export default function ViewerDashboard({
             <RecentSalesTab
               assignments={data.assignments}
             />
+          </TabsContent>
+
+          {/* Rules */}
+          <TabsContent
+            value="rules"
+            className="w-full space-y-4"
+          >
+            <RulesTab />
           </TabsContent>
 
           {/* Sponsors */}

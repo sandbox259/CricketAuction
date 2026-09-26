@@ -15,7 +15,7 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: "Live Cricket Auction",
-  description: "Real-time cricket player auction system",
+  description: "CMSC Allumni Cricket Auction Platform",
   generator: "v0.app",
 }
 
