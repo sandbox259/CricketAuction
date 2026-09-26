@@ -529,11 +529,11 @@ export default function LiveAuctionTab({
                   </div>
 
                   <div className="shrink-0 text-right">
-                    <p className="text-xs font-semibold text-gray-900">
+                    {/* <p className="text-xs font-semibold text-gray-900">
                       {formatCurrency(
                         assignment.final_price
                       )}
-                    </p>
+                    </p> */}
 
                     <p className="text-[10px] text-gray-500">
                       {assignment.assigned_at

@@ -1005,7 +1005,7 @@ export default function TeamsStandingsTab({
 
                             </div>
 
-                            <p
+                            {/* <p
                               className="
                                 text-amber-500
                                 font-semibold
@@ -1016,7 +1016,7 @@ export default function TeamsStandingsTab({
                               {formatCurrency(
                                 player.final_price
                               )}
-                            </p>
+                            </p> */}
 
                           </div>
 

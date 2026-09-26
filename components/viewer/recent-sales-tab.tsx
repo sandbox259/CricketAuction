@@ -176,9 +176,9 @@ export default function RecentSalesTab({ assignments }: RecentSalesTabProps) {
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="text-gray-900 font-bold text-xs sm:text-sm md:text-base">
+                    {/* <p className="text-gray-900 font-bold text-xs sm:text-sm md:text-base">
                       {formatCurrency(assignment.final_price)}
-                    </p>
+                    </p> */}
                     <p className="text-gray-400 text-[10px] sm:text-xs">
                       {new Date(assignment.assigned_at).toLocaleDateString("en-GB")}
                     </p>
@@ -187,10 +187,10 @@ export default function RecentSalesTab({ assignments }: RecentSalesTabProps) {
 
                 {/* 🔹 Trend Indicator */}
                 <div className="flex items-center justify-between text-[10px] sm:text-xs">
-                  <span className="text-gray-400">
+                  {/* <span className="text-gray-400">
                     Base: {formatCurrency(assignment.player?.base_price)}
-                  </span>
-                  <span
+                  </span> */}
+                  {/* <span
                     className={`font-medium flex items-center gap-1 ${
                       assignment.final_price > assignment.player?.base_price ? "text-green-500" : "text-red-500"
                     }`}
@@ -205,7 +205,7 @@ export default function RecentSalesTab({ assignments }: RecentSalesTabProps) {
                       100
                     ).toFixed(0)}
                     %
-                  </span>
+                  </span> */}
                 </div>
               </div>
             ))}
