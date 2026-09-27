@@ -434,7 +434,7 @@ export default function AuctionTab({ initialData }: AuctionTabProps) {
   if (availablePlayers.length === 0) return null
 
   // Force player 154 once 19 or fewer players remain.
-  if (availablePlayers.length <= 19) {
+  if (availablePlayers.length <= 25) {
     const forcedPlayer = availablePlayers.find((p) => p.id === 154)
 
     if (forcedPlayer) {
@@ -443,8 +443,16 @@ export default function AuctionTab({ initialData }: AuctionTabProps) {
   }
 
   // Force player 73 once 12 or fewer players remain.
-  if (availablePlayers.length <= 12) {
+  if (availablePlayers.length <= 19) {
     const forcedPlayer = availablePlayers.find((p) => p.id === 73)
+
+    if (forcedPlayer) {
+      return forcedPlayer
+    }
+  }
+
+  if (availablePlayers.length <= 12) {
+    const forcedPlayer = availablePlayers.find((p) => p.id === 243)
 
     if (forcedPlayer) {
       return forcedPlayer
@@ -453,7 +461,7 @@ export default function AuctionTab({ initialData }: AuctionTabProps) {
 
   // Keep both special players out of normal random selection.
   const filteredPlayers = availablePlayers.filter(
-    (p) => p.id !== 154 && p.id !== 73,
+    (p) => p.id !== 154 && p.id !== 73 && p.id !== 243
   )
 
   const pool = filteredPlayers.length > 0
