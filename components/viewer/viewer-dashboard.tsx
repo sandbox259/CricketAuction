@@ -772,6 +772,14 @@ export default function ViewerDashboard({
 
               <Card className="flex items-center justify-center p-4 shadow-sm">
                 <img
+                  src="/logos/iproute.jpeg"
+                  alt="Sponsor 5"
+                  className="h-12 w-auto object-contain"
+                />
+              </Card>
+
+              <Card className="flex items-center justify-center p-4 shadow-sm">
+                <img
                   src="/logos/sigdi.jpg"
                   alt="Sponsor 6"
                   className="h-12 w-auto object-contain"
