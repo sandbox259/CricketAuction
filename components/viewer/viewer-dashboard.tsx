@@ -704,97 +704,91 @@ export default function ViewerDashboard({
           </TabsContent>
 
           {/* Sponsors */}
-          <TabsContent
-            value="sponsors"
-            className="w-full space-y-4"
+        
+{/* Sponsors */}
+<TabsContent value="sponsors" className="w-full space-y-6">
+  <section className="relative overflow-hidden rounded-2xl border border-blue-100 bg-gradient-to-br from-white via-blue-50/40 to-amber-50/50 px-4 py-7 sm:px-7 sm:py-9">
+    <div className="relative text-center">
+      <div className="mx-auto mb-3 h-1 w-12 rounded-full bg-amber-500" />
+
+      <h2 className="text-2xl font-extrabold tracking-tight text-blue-950 sm:text-3xl">
+        Our Sponsors
+      </h2>
+
+      <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-gray-600 sm:text-base">
+        Celebrating the valued partners.
+      </p>
+
+      <div className="mx-auto mt-4 flex items-center justify-center gap-2">
+        <span className="h-px w-8 bg-amber-300" />
+        <Star className="h-4 w-4 fill-amber-500 text-amber-500" />
+        <span className="h-px w-8 bg-amber-300" />
+      </div>
+    </div>
+  </section>
+
+  {/*
+    Update the display names below to match the exact sponsor names.
+    The image paths remain unchanged.
+  */}
+  {(() => {
+    const sponsors = [
+      { name: "Al-Qaswa Tours & Travels", logo: "/logos/sarjif.jpg" },
+      { name: "Mohammed Mukhtyar Ahmed Varaya", logo: "/logos/mukh.png" },
+      { name: "Huma Caterers", logo: "/logos/Humalogo.jpg" },
+      { name: "Mithiyaaj", logo: "/logos/mithiyaaj.jpg" },
+      { name: "Aashiyanaa Villa", logo: "/logos/aashiyanalogo.jpg" },
+      { name: "Shahi Durbar", logo: "/logos/shahilogo.jpg" },
+      { name: "IP Route", logo: "/logos/iproute.jpeg" },
+      { name: "Sigdi", logo: "/logos/sigdi_newlogo.jpg" },
+      { name: "AA Sports", logo: "/logos/AA_sports.jpg" },
+      { name: "Abdul Cureem", logo: "/logos/abdul_cureem_logo.jpg" },
+      { name: "Dr. Fit", logo: "/logos/dr_fit.png" },
+      { name: "My Design Studio", logo: "/logos/MyDesign.png" },
+      { name: "Miral Heights", logo: "/logos/Miral_heights.png" },
+      { name: "Nexa", logo: "/logos/nexa.jpg" },
+      { name: "Sufyana Ashfaque", logo: "/logos/sufyana_logo.jpg" },
+      { name: "Nutrify Fitness", logo: "/logos/nutrify_fitness.jpg" },
+      { name: "Pandro Mandal", logo: "/logos/pandro_mandal_logo.jpg" },
+      { name: "Saad Fragrances", logo: "/logos/saad_fragrances.jpg" },
+      { name: "Femistic Chinese", logo: "/logos/femistic_chinese.jpg" },
+      { name: "Sufy Kanafeh Point", logo: "/logos/sufy_kunafah.jpg" },
+      { name: "Ice-Cream Factory", logo: "/logos/icecream_factory_logo.jpg" },
+    ]
+
+    return (
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-5 lg:grid-cols-4 xl:grid-cols-5">
+        {sponsors.map((sponsor) => (
+          <Card
+            key={sponsor.logo}
+            className="group overflow-hidden rounded-2xl border border-gray-200/80 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-amber-300 hover:shadow-lg"
           >
-            <h2 className="text-lg font-bold text-gray-900">
-              Our Sponsors
-            </h2>
-
-            <div
-              className="
-                grid
-                grid-cols-2
-                gap-4
-                sm:grid-cols-3
-                md:grid-cols-4
-              "
-            >
-              <Card className="flex items-center justify-center p-4 shadow-sm">
+            <CardContent className="flex h-full flex-col items-center p-3 sm:p-4">
+              {/* Prominent logo area */}
+              <div className="flex min-h-[125px] w-full items-center justify-center rounded-xl bg-white px-1 py-3 sm:min-h-[155px] sm:px-2">
                 <img
-                  src="/logos/sarjif.jpg"
-                  alt="Sponsor 8"
-                  className="h-12 w-auto object-contain"
+                  src={sponsor.logo}
+                  alt={`${sponsor.name} sponsor logo`}
+                  loading="lazy"
+                  className="max-h-[112px] w-full object-contain transition-transform duration-300 group-hover:scale-105 sm:max-h-[140px]"
                 />
-              </Card>
+              </div>
 
-              <Card className="flex items-center justify-center p-4 shadow-sm">
-                <img
-                  src="/logos/mukh.png"
-                  alt="Sponsor 7"
-                  className="h-12 w-auto object-contain"
-                />
-              </Card>
+              {/* Sponsor name */}
+              <div className="mt-2 flex min-h-[48px] w-full flex-col items-center justify-center border-t border-gray-100 px-1 pt-3 text-center">
+                <p className="break-words text-sm font-bold leading-snug text-blue-950 sm:text-base">
+                  {sponsor.name}
+                </p>
+                <span className="mt-2 h-0.5 w-7 rounded-full bg-amber-400 transition-all duration-300 group-hover:w-12" />
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    )
+  })()}
+</TabsContent>
 
-              <Card className="flex items-center justify-center p-4 shadow-sm">
-                <img
-                  src="/logos/Humalogo.jpg"
-                  alt="Sponsor 3"
-                  className="h-12 w-auto object-contain"
-                />
-              </Card>
-
-              <Card className="flex items-center justify-center p-4 shadow-sm">
-                <img
-                  src="/logos/mithiyaaj.jpg"
-                  alt="Sponsor 4"
-                  className="h-12 w-auto object-contain"
-                />
-              </Card>
-
-
-              <Card className="flex items-center justify-center p-4 shadow-sm">
-                <img
-                  src="/logos/aashiyanalogo.jpg"
-                  alt="Sponsor 1"
-                  className="h-12 w-auto object-contain"
-                />
-              </Card>
-
-              <Card className="flex items-center justify-center p-4 shadow-sm">
-                <img
-                  src="/logos/shahilogo.jpg"
-                  alt="Sponsor 5"
-                  className="h-12 w-auto object-contain"
-                />
-              </Card>
-
-              <Card className="flex items-center justify-center p-4 shadow-sm">
-                <img
-                  src="/logos/iproute.jpeg"
-                  alt="Sponsor 5"
-                  className="h-12 w-auto object-contain"
-                />
-              </Card>
-
-              <Card className="flex items-center justify-center p-4 shadow-sm">
-                <img
-                  src="/logos/sigdi.jpg"
-                  alt="Sponsor 6"
-                  className="h-12 w-auto object-contain"
-                />
-              </Card>
-
-              <Card className="flex items-center justify-center p-4 shadow-sm">
-                <img
-                  src="/logos/designer.jpg"
-                  alt="Sponsor 2"
-                  className="h-12 w-auto object-contain"
-                />
-              </Card>
-            </div>
-          </TabsContent>
         </Tabs>
       </div>
 
