@@ -682,17 +682,38 @@ export default function LiveAuctionTab({
            NO ACTIVE AUCTION
            ======================================================= */
 
-        <Card className="rounded-2xl border-gray-200 bg-white shadow-sm">
-          <CardContent className="space-y-2 p-6 text-center">
-            <Clock className="mx-auto mb-2 h-12 w-12 text-gray-400" />
+        // <Card className="rounded-2xl border-gray-200 bg-white shadow-sm">
+        //   <CardContent className="space-y-2 p-6 text-center">
+        //     <Clock className="mx-auto mb-2 h-12 w-12 text-gray-400" />
 
-            <h3 className="font-semibold text-gray-900">
-              No Active Auction
-            </h3>
+        //     <h3 className="font-semibold text-gray-900">
+        //       No Active Auction
+        //     </h3>
 
-            <p className="text-sm text-gray-500">
-              Waiting for the next player...
-            </p>
+        //     <p className="text-sm text-gray-500">
+        //       Waiting for the next player...
+        //     </p>
+        //   </CardContent>
+        // </Card>
+
+  /* SEASON 10 WELCOME DINNER INVITATION */
+
+        <Card className="w-full overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+          <CardContent className="p-2 sm:p-3">
+            <div className="flex w-full justify-center">
+              <img
+                src="https://media.cmscallumni.in/rules/Invitation.jpeg"
+                alt="CMSC Alumni Season 10 Grand Welcome Dinner Invitation"
+                className="
+                  block
+                  h-auto
+                  w-full
+                  max-w-[650px]
+                  rounded-xl
+                  object-contain
+                "
+              />
+            </div>
           </CardContent>
         </Card>
       )}
