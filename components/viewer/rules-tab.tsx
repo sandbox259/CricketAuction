@@ -51,6 +51,11 @@ const rules = [
     src: "https://media.cmscallumni.in/rules/Rules_9.jpeg",
     alt: "Auction Rules - Page 9",
   },
+  {
+    id: 10,
+    src: "https://media.cmscallumni.in/rules/Rules_10.jpeg",
+    alt: "Auction Rules - Page 10",
+  },
 ]
 
 export default function RulesTab() {
