@@ -8,23 +8,48 @@ import { Card, CardContent } from "@/components/ui/card"
 const rules = [
   {
     id: 1,
-    src: "https://media.cmscallumni.in/rules/rule-1.webp",
+    src: "https://media.cmscallumni.in/rules/Rules_1.jpeg",
     alt: "Auction Rules - Page 1",
   },
   {
     id: 2,
-    src: "https://media.cmscallumni.in/rules/rule-2.webp",
+    src: "https://media.cmscallumni.in/rules/Rules_2.jpeg",
     alt: "Auction Rules - Page 2",
   },
   {
     id: 3,
-    src: "https://media.cmscallumni.in/rules/rule-3.webp",
+    src: "https://media.cmscallumni.in/rules/Rules_3.jpeg",
     alt: "Auction Rules - Page 3",
   },
   {
     id: 4,
-    src: "https://media.cmscallumni.in/rules/rule-4.webp",
+    src: "https://media.cmscallumni.in/rules/Rules_4.jpeg",
     alt: "Auction Rules - Page 4",
+  },
+  {
+    id: 5,
+    src: "https://media.cmscallumni.in/rules/Rules_5.jpeg",
+    alt: "Auction Rules - Page 5",
+  },
+  {
+    id: 6,
+    src: "https://media.cmscallumni.in/rules/Rules_6.jpeg",
+    alt: "Auction Rules - Page 6",
+  },
+  {
+    id: 7,
+    src: "https://media.cmscallumni.in/rules/Rules_7.jpeg",
+    alt: "Auction Rules - Page 7",
+  },
+  {
+    id: 8,
+    src: "https://media.cmscallumni.in/rules/Rules_8.jpeg",
+    alt: "Auction Rules - Page 8",
+  },
+  {
+    id: 9,
+    src: "https://media.cmscallumni.in/rules/Rules_9.jpeg",
+    alt: "Auction Rules - Page 9",
   },
 ]
 
